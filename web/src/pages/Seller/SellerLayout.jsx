@@ -1,13 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import useAuth from "@/hooks/use-auth";
-import { LayoutDashboard, Package, ShoppingBag, Users, LogOut, ChevronRight, Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  Users,
+  LogOut,
+  ChevronRight,
+  Menu,
+  X,
+  Layers,
+  UtensilsCrossed,
+  Flame,
+  Palette,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/seller", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/seller/products", label: "Products", icon: Package },
   { to: "/seller/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/seller/categories", label: "Categories", icon: Palette },
+  { to: "/seller/sizes", label: "Sizes", icon: Layers },
+  { to: "/seller/kitchens", label: "Kitchens", icon: UtensilsCrossed },
+  { to: "/seller/cuisines", label: "Cuisines", icon: Flame },
   { to: "/seller/users", label: "Users", icon: Users },
 ];
 
@@ -30,7 +47,7 @@ const SidebarContent = ({ pathname, user, logout, onNavClick }) => (
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
               active
                 ? "bg-black text-white"
-                : "text-neutral-600 hover:bg-gray-100 hover:text-neutral-800"
+                : "text-neutral-600 hover:bg-gray-100 hover:text-neutral-800",
             )}
           >
             <Icon className="w-4 h-4 shrink-0" />
@@ -41,7 +58,9 @@ const SidebarContent = ({ pathname, user, logout, onNavClick }) => (
     </nav>
     <div className="px-3 py-4 border-t border-gray-100">
       <div className="px-3 py-2 mb-2">
-        <p className="text-xs font-semibold text-neutral-700 truncate">{user.name}</p>
+        <p className="text-xs font-semibold text-neutral-700 truncate">
+          {user.name}
+        </p>
         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
       </div>
       <button
@@ -62,7 +81,10 @@ const SellerLayout = ({ children }) => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!token) { setChecking(false); return; }
+    if (!token) {
+      setChecking(false);
+      return;
+    }
     refreshUser(token).finally(() => setChecking(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -70,13 +92,13 @@ const SellerLayout = ({ children }) => {
   if (checking) return null; // wait for refresh before checking role
   if (user.role !== "admin") return <Navigate to="/" replace />;
 
-  const pageLabel = pathname === "/seller"
-    ? "Dashboard"
-    : pathname.replace(/^\/seller\//, "").replace(/\/.*$/, "");
+  const pageLabel =
+    pathname === "/seller"
+      ? "Dashboard"
+      : pathname.replace(/^\/seller\//, "").replace(/\/.*$/, "");
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -89,7 +111,7 @@ const SellerLayout = ({ children }) => {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-100 transition-transform duration-300 md:static md:translate-x-0 md:w-60 md:shrink-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <SidebarContent
@@ -112,9 +134,16 @@ const SellerLayout = ({ children }) => {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <Link to="/" className="hover:text-neutral-800 transition-colors hidden sm:inline">Store</Link>
+          <Link
+            to="/"
+            className="hover:text-neutral-800 transition-colors hidden sm:inline"
+          >
+            Store
+          </Link>
           <ChevronRight className="w-3.5 h-3.5 hidden sm:inline" />
-          <span className="text-neutral-800 font-medium capitalize">{pageLabel}</span>
+          <span className="text-neutral-800 font-medium capitalize">
+            {pageLabel}
+          </span>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
@@ -124,4 +153,3 @@ const SellerLayout = ({ children }) => {
 };
 
 export default SellerLayout;
-

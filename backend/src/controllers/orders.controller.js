@@ -1,8 +1,8 @@
-const prisma = require("../utils/prisma");
+const { query } = require("../utils/prisma");
 
 const getOrders = async (req, res, next) => {
   try {
-    const rows = await prisma.$queryRawUnsafe(
+    const result = await query(
       `
       SELECT
         o.id AS "orderId", o."isPaid", o.phone, o.address, o.order_status, o."userId",
@@ -16,11 +16,11 @@ const getOrders = async (req, res, next) => {
       WHERE o."userId" = $1
       ORDER BY o."createdAt" DESC
     `,
-      req.user.id,
+      [req.user.id],
     );
 
     const ordersMap = new Map();
-    for (const row of rows) {
+    for (const row of result.rows) {
       if (!ordersMap.has(row.orderId)) {
         ordersMap.set(row.orderId, {
           id: row.orderId,

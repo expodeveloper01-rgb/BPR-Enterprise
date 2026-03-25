@@ -3,7 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 import useAuth from "@/hooks/use-auth";
+import useCart from "@/hooks/use-carts";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 import logo from "/assets/img/uncle-brew.png";
 
 // ── OTP input: 6 boxes ───────────────────────────────────────────────────────
@@ -25,7 +27,10 @@ const OtpInput = ({ value, onChange }) => {
   };
 
   const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     onChange(pasted);
     refs.current[Math.min(5, pasted.length)]?.focus();
     e.preventDefault();
@@ -57,11 +62,13 @@ const SignUpPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const { register, verifyEmail, resendCode, loginWithGoogle } = useAuth();
+  const { fetchCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -97,10 +104,14 @@ const SignUpPage = () => {
   // Step 2 — verify OTP
   const handleVerify = async (e) => {
     e.preventDefault();
-    if (code.length < 6) { toast.error("Enter the full 6-digit code"); return; }
+    if (code.length < 6) {
+      toast.error("Enter the full 6-digit code");
+      return;
+    }
     setLoading(true);
     try {
       await verifyEmail(pendingEmail, code);
+      await fetchCart();
       toast.success("Email verified! Welcome to Uncle Brew 🎉");
       navigate("/");
     } catch (err) {
@@ -126,6 +137,7 @@ const SignUpPage = () => {
   const handleGoogle = async (credentialResponse) => {
     try {
       await loginWithGoogle(credentialResponse.credential);
+      await fetchCart();
       navigate("/");
     } catch (err) {
       toast.error(err.response?.data?.message || "Google sign-up failed");
@@ -137,7 +149,9 @@ const SignUpPage = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ffffff15,transparent_60%)]" />
       <img src={logo} alt="logo" className="w-40 mb-8" />
       <h2 className="text-4xl font-bold text-white text-center leading-tight">
-        Join Uncle Brew<br />today
+        Join Uncle Brew
+        <br />
+        today
       </h2>
       <p className="text-neutral-400 text-center mt-4 max-w-xs">
         Create your account and start ordering your favorite brews and bites.
@@ -156,13 +170,28 @@ const SignUpPage = () => {
               <img src={logo} alt="logo" className="w-32" />
             </div>
             <div className="w-14 h-14 rounded-full bg-black flex items-center justify-center mx-auto mb-6">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                className="w-7 h-7 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-neutral-800 mb-2">Check your inbox</h1>
+            <h1 className="text-2xl font-bold text-neutral-800 mb-2">
+              Check your inbox
+            </h1>
             <p className="text-sm text-muted-foreground mb-8">
-              We sent a 6-digit code to <span className="font-semibold text-neutral-700">{pendingEmail}</span>
+              We sent a 6-digit code to{" "}
+              <span className="font-semibold text-neutral-700">
+                {pendingEmail}
+              </span>
             </p>
 
             <form onSubmit={handleVerify} className="space-y-6">
@@ -189,7 +218,10 @@ const SignUpPage = () => {
             </p>
             <button
               type="button"
-              onClick={() => { setStep("form"); setCode(""); }}
+              onClick={() => {
+                setStep("form");
+                setCode("");
+              }}
               className="mt-3 text-xs text-muted-foreground hover:underline"
             >
               ← Back to sign up
@@ -210,17 +242,24 @@ const SignUpPage = () => {
             <img src={logo} alt="logo" className="w-32" />
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-1">Create account</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-1">
+            Create account
+          </h1>
           <p className="text-sm text-muted-foreground mb-8">
             Already have an account?{" "}
-            <Link to="/sign-in" className="text-black font-semibold hover:underline">
+            <Link
+              to="/sign-in"
+              className="text-black font-semibold hover:underline"
+            >
               Sign in
             </Link>
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">Full Name</label>
+              <label className="text-sm font-medium text-neutral-700">
+                Full Name
+              </label>
               <input
                 type="text"
                 required
@@ -232,7 +271,9 @@ const SignUpPage = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">Email</label>
+              <label className="text-sm font-medium text-neutral-700">
+                Email
+              </label>
               <input
                 type="email"
                 required
@@ -244,16 +285,27 @@ const SignUpPage = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
-              />
+              <label className="text-sm font-medium text-neutral-700">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <Button
@@ -271,11 +323,13 @@ const SignUpPage = () => {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
-          <div className="flex justify-center">
+          <div className="w-full">
             <GoogleLogin
               onSuccess={handleGoogle}
               onError={() => toast.error("Google sign-up failed")}
               width="100%"
+              size="large"
+              text="signup_with"
             />
           </div>
         </div>

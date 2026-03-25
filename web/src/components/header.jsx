@@ -6,6 +6,7 @@ import MainNav from "@/components/main-nav";
 import { useEffect, useRef, useState } from "react";
 import CartActionButton from "./cart-action";
 import useAuth from "@/hooks/use-auth";
+import useCart from "@/hooks/use-carts";
 import logo from "/assets/img/uncle-brew.png";
 import { Menu, X } from "lucide-react";
 
@@ -15,6 +16,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { user, logout } = useAuth();
+  const { removeAll: clearCart } = useCart();
   const isSignedIn = !!user;
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -39,6 +41,7 @@ const Header = () => {
 
   const handleSignOut = () => {
     logout();
+    clearCart();
     setDropdownOpen(false);
     navigate("/");
   };
@@ -52,7 +55,11 @@ const Header = () => {
     >
       <Container>
         <div className="relative px-4 sm:px-6 lg:px-12 flex h-16 items-center">
-          <Link to="/" className="flex items-center shrink-0" onClick={() => setMobileOpen(false)}>
+          <Link
+            to="/"
+            className="flex items-center shrink-0"
+            onClick={() => setMobileOpen(false)}
+          >
             <img src={logo} alt="logo" className="w-24 md:w-28" />
           </Link>
 
@@ -145,10 +152,11 @@ const Header = () => {
                   onClick={() => setMobileOpen((o) => !o)}
                   aria-label="Toggle menu"
                 >
-                  {mobileOpen
-                    ? <X className="w-6 h-6 text-neutral-800" />
-                    : <Menu className="w-6 h-6 text-neutral-800" />
-                  }
+                  {mobileOpen ? (
+                    <X className="w-6 h-6 text-neutral-800" />
+                  ) : (
+                    <Menu className="w-6 h-6 text-neutral-800" />
+                  )}
                 </button>
               </div>
             )}
@@ -166,7 +174,9 @@ const Header = () => {
               { to: "/orders", label: "Orders" },
               { to: "/about", label: "About" },
               { to: "/contact", label: "Contact" },
-              ...(user?.role === "admin" ? [{ to: "/seller", label: "Dashboard" }] : []),
+              ...(user?.role === "admin"
+                ? [{ to: "/seller", label: "Dashboard" }]
+                : []),
             ].map(({ to, label }) => (
               <Link
                 key={to}
@@ -178,11 +188,23 @@ const Header = () => {
               </Link>
             ))}
             <div className="flex gap-3 pt-4">
-              <Link to="/sign-in" onClick={() => setMobileOpen(false)} className="flex-1">
-                <Button variant="outline" className="w-full rounded-full">Sign in</Button>
+              <Link
+                to="/sign-in"
+                onClick={() => setMobileOpen(false)}
+                className="flex-1"
+              >
+                <Button variant="outline" className="w-full rounded-full">
+                  Sign in
+                </Button>
               </Link>
-              <Link to="/sign-up" onClick={() => setMobileOpen(false)} className="flex-1">
-                <Button className="w-full rounded-full bg-black text-white">Sign up</Button>
+              <Link
+                to="/sign-up"
+                onClick={() => setMobileOpen(false)}
+                className="flex-1"
+              >
+                <Button className="w-full rounded-full bg-black text-white">
+                  Sign up
+                </Button>
               </Link>
             </div>
           </nav>

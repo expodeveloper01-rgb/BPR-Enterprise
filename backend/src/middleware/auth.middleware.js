@@ -1,5 +1,5 @@
 const { verifyToken } = require("../utils/jwt");
-const prisma = require("../utils/prisma");
+const { query } = require("../utils/prisma");
 
 const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -11,10 +11,13 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = verifyToken(token);
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) return res.status(401).json({ message: "User not found" });
+    const result = await query('SELECT * FROM "User" WHERE id = $1', [
+      decoded.id,
+    ]);
+    if (!result.rows.length)
+      return res.status(401).json({ message: "User not found" });
 
-    req.user = user;
+    req.user = result.rows[0];
     next();
   } catch {
     return res.status(401).json({ message: "Token invalid or expired" });
@@ -23,7 +26,9 @@ const protect = async (req, res, next) => {
 
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({ message: "Forbidden: admin access required" });
+    return res
+      .status(403)
+      .json({ message: "Forbidden: admin access required" });
   }
   next();
 };

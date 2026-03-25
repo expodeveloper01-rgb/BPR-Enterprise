@@ -11,9 +11,13 @@ const PageContent = ({ orders }) => {
           <PackageOpen className="w-7 h-7 text-neutral-400" />
         </div>
         <p className="text-lg font-semibold text-neutral-700">No orders yet</p>
-        <p className="text-sm text-muted-foreground">Your completed orders will appear here.</p>
+        <p className="text-sm text-muted-foreground">
+          Your completed orders will appear here.
+        </p>
         <Link to="/menu">
-          <Button className="rounded-full px-6 bg-black text-white hover:bg-black/80">Start Shopping</Button>
+          <Button className="rounded-full px-6 bg-black text-white hover:bg-black/80">
+            Start Brewing Your Coffee
+          </Button>
         </Link>
       </div>
     );

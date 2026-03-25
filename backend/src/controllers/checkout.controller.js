@@ -1,5 +1,5 @@
 const Stripe = require("stripe");
-const prisma = require("../utils/prisma");
+const { query } = require("../utils/prisma");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -28,7 +28,7 @@ const createCheckout = async (req, res, next) => {
       line_items: lineItems,
       mode: "payment",
       success_url: `${process.env.FRONTEND_URL}/cart?success=1`,
-      cancel_url:  `${process.env.FRONTEND_URL}/cart?canceled=1`,
+      cancel_url: `${process.env.FRONTEND_URL}/cart?canceled=1`,
       metadata: {
         userId,
         productIds: products.map((p) => p.id).join(","),
@@ -46,7 +46,11 @@ const handleWebhook = async (req, res, next) => {
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch (err) {
     return res.status(400).json({ message: `Webhook error: ${err.message}` });
   }
@@ -56,15 +60,28 @@ const handleWebhook = async (req, res, next) => {
     const { userId, productIds } = session.metadata;
     const ids = productIds.split(",");
 
-    await prisma.order.create({
-      data: {
-        isPaid: true,
-        userId,
-        orderItems: {
-          create: ids.map((productId) => ({ product: { connect: { id: productId } } })),
-        },
-      },
-    });
+    try {
+      // Create order
+      const orderResult = await query(
+        `INSERT INTO "Order" (id, "userId", "isPaid", "order_status", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, true, 'Processing', NOW(), NOW())
+         RETURNING id`,
+        [userId],
+      );
+
+      const orderId = orderResult.rows[0].id;
+
+      // Create order items
+      for (const productId of ids) {
+        await query(
+          `INSERT INTO "OrderItem" (id, "orderId", "productId", "createdAt", "updatedAt")
+           VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())`,
+          [orderId, productId],
+        );
+      }
+    } catch (err) {
+      console.error("Error creating order from webhook:", err);
+    }
   }
 
   res.json({ received: true });
@@ -73,29 +90,46 @@ const handleWebhook = async (req, res, next) => {
 // Cash on Delivery
 const createCODOrder = async (req, res, next) => {
   try {
-    const { products, phone, address } = req.body;
+    const { phone, address } = req.body;
     const userId = req.user.id;
 
-    if (!products || products.length === 0)
-      return res.status(400).json({ message: "No products provided" });
     if (!phone || !address)
-      return res.status(400).json({ message: "Phone and address are required" });
+      return res
+        .status(400)
+        .json({ message: "Phone and address are required" });
 
-    const order = await prisma.order.create({
-      data: {
-        isPaid: false,
-        phone,
-        address,
-        paymentMethod: "cod",
-        order_status: "Processing",
-        userId,
-        orderItems: {
-          create: products.map((p) => ({ product: { connect: { id: p.id } } })),
-        },
-      },
-    });
+    // Get cart items from database
+    const cartResult = await query(
+      'SELECT "productId", quantity FROM "Cart" WHERE "userId" = $1',
+      [userId],
+    );
 
-    res.status(201).json({ orderId: order.id });
+    if (cartResult.rows.length === 0)
+      return res.status(400).json({ message: "Cart is empty" });
+
+    // Create order
+    const orderResult = await query(
+      `INSERT INTO "Order" (id, "userId", "isPaid", phone, address, "paymentMethod", "order_status", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid(), $1, false, $2, $3, 'cod', 'Processing', NOW(), NOW())
+       RETURNING id`,
+      [userId, phone, address],
+    );
+
+    const orderId = orderResult.rows[0].id;
+
+    // Create order items with quantities
+    for (const cartItem of cartResult.rows) {
+      await query(
+        `INSERT INTO "OrderItem" (id, "orderId", "productId", quantity, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
+        [orderId, cartItem.productId, cartItem.quantity],
+      );
+    }
+
+    // Clear cart after successful order
+    await query('DELETE FROM "Cart" WHERE "userId" = $1', [userId]);
+
+    res.status(201).json({ orderId });
   } catch (err) {
     next(err);
   }
@@ -104,35 +138,56 @@ const createCODOrder = async (req, res, next) => {
 // Bank Transfer
 const createBankTransferOrder = async (req, res, next) => {
   try {
-    const { products, phone, address, referenceNumber } = req.body;
+    const { phone, address, referenceNumber } = req.body;
     const userId = req.user.id;
 
-    if (!products || products.length === 0)
-      return res.status(400).json({ message: "No products provided" });
     if (!phone || !address)
-      return res.status(400).json({ message: "Phone and address are required" });
+      return res
+        .status(400)
+        .json({ message: "Phone and address are required" });
     if (!referenceNumber || !referenceNumber.trim())
       return res.status(400).json({ message: "Reference number is required" });
 
-    const order = await prisma.order.create({
-      data: {
-        isPaid: false,
-        phone,
-        address,
-        paymentMethod: "bank_transfer",
-        referenceNumber: referenceNumber.trim(),
-        order_status: "Pending Payment Verification",
-        userId,
-        orderItems: {
-          create: products.map((p) => ({ product: { connect: { id: p.id } } })),
-        },
-      },
-    });
+    // Get cart items from database
+    const cartResult = await query(
+      'SELECT "productId", quantity FROM "Cart" WHERE "userId" = $1',
+      [userId],
+    );
 
-    res.status(201).json({ orderId: order.id });
+    if (cartResult.rows.length === 0)
+      return res.status(400).json({ message: "Cart is empty" });
+
+    // Create order
+    const orderResult = await query(
+      `INSERT INTO "Order" (id, "userId", "isPaid", phone, address, "paymentMethod", "referenceNumber", "order_status", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid(), $1, false, $2, $3, 'bank_transfer', $4, 'Pending Payment Verification', NOW(), NOW())
+       RETURNING id`,
+      [userId, phone, address, referenceNumber.trim()],
+    );
+
+    const orderId = orderResult.rows[0].id;
+
+    // Create order items with quantities
+    for (const cartItem of cartResult.rows) {
+      await query(
+        `INSERT INTO "OrderItem" (id, "orderId", "productId", quantity, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
+        [orderId, cartItem.productId, cartItem.quantity],
+      );
+    }
+
+    // Clear cart after successful order
+    await query('DELETE FROM "Cart" WHERE "userId" = $1', [userId]);
+
+    res.status(201).json({ orderId });
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { createCheckout, handleWebhook, createCODOrder, createBankTransferOrder };
+module.exports = {
+  createCheckout,
+  handleWebhook,
+  createCODOrder,
+  createBankTransferOrder,
+};

@@ -1,9 +1,9 @@
-const prisma = require("../utils/prisma");
+const { query } = require("../utils/prisma");
 
 const getCuisines = async (_req, res, next) => {
   try {
-    const cuisines = await prisma.cuisine.findMany({ orderBy: { name: "asc" } });
-    res.json(cuisines);
+    const result = await query('SELECT * FROM "Cuisine" ORDER BY name ASC', []);
+    res.json(result.rows);
   } catch (err) {
     next(err);
   }

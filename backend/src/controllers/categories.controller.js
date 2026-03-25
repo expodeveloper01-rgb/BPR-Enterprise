@@ -1,9 +1,12 @@
-const prisma = require("../utils/prisma");
+const { query } = require("../utils/prisma");
 
 const getCategories = async (_req, res, next) => {
   try {
-    const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
-    res.json(categories);
+    const result = await query(
+      'SELECT * FROM "Category" ORDER BY name ASC',
+      [],
+    );
+    res.json(result.rows);
   } catch (err) {
     next(err);
   }

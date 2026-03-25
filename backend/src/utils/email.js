@@ -27,4 +27,21 @@ async function sendVerificationEmail(to, name, code) {
   });
 }
 
-module.exports = { sendVerificationEmail };
+async function sendPasswordResetEmail(to, name, resetLink) {
+  await transporter.sendMail({
+    from: `"Uncle Brew Cebu" <${process.env.SMTP_FROM}>`,
+    to,
+    subject: "Reset your Uncle Brew password",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
+        <img src="${process.env.FRONTEND_URL}/assets/img/uncle-brew.png" alt="Uncle Brew" style="width:80px;margin-bottom:24px" />
+        <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px">Reset your password</h2>
+        <p style="color:#6b7280;font-size:15px;margin:0 0 24px">Hi ${name}, click the link below to reset your password:</p>
+        <a href="${resetLink}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;margin-bottom:24px">Reset Password</a>
+        <p style="color:#9ca3af;font-size:13px;margin:0">This link expires in <strong>1 hour</strong>. If you didn't request this, ignore this email.</p>
+      </div>
+    `,
+  });
+}
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };

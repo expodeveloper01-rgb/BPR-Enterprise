@@ -1,66 +1,90 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import useCart from "@/hooks/use-carts";
+import useAuth from "@/hooks/use-auth";
+import toast from "react-hot-toast";
 
 export const PopularContent = ({ data }) => {
   const cart = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const addToCart = () => {
+    if (!user) {
+      toast.error("Please sign in to add items to cart");
+      navigate("/sign-in");
+      return;
+    }
     cart.addItem({ ...data, qty: 1 });
   };
 
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow overflow-hidden flex flex-col">
+    <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image */}
-      <Link to={`/menu/${data.id}`} className="block relative overflow-hidden bg-gray-50 aspect-square">
+      <Link
+        to={`/menu/${data.id}`}
+        className="block relative overflow-hidden bg-gray-50 aspect-square"
+      >
         <img
           alt={data.name}
           src={data.images[0]?.url}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <button
-          onClick={(e) => { e.preventDefault(); addToCart(); }}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+          onClick={(e) => {
+            e.preventDefault();
+            addToCart();
+          }}
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
         >
-          <ShoppingCart className="w-3.5 h-3.5" />
+          <ShoppingCart className="w-3 h-3" />
         </button>
       </Link>
 
       {/* Content */}
-      <div className="flex flex-col flex-1 p-4 gap-2">
+      <div className="flex flex-col flex-1 p-3 gap-2">
         {/* Badges */}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-0.5">
           {data.cuisine && (
-            <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold capitalize">
+            <span className="rounded-full bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[9px] font-semibold capitalize">
               {data.cuisine}
             </span>
           )}
           {data.category && (
-            <span className="rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 text-[10px] font-semibold capitalize">
+            <span className="rounded-full bg-blue-50 text-blue-700 px-1.5 py-0.5 text-[9px] font-semibold capitalize">
               {data.category}
             </span>
           )}
           {data.size && (
-            <span className="rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold capitalize">
+            <span className="rounded-full bg-yellow-50 text-yellow-700 px-1.5 py-0.5 text-[9px] font-semibold capitalize">
               {data.size}
             </span>
           )}
         </div>
 
         <Link to={`/menu/${data.id}`}>
-          <h3 className="font-semibold text-neutral-800 leading-snug hover:underline line-clamp-2">
+          <h3 className="font-semibold text-sm text-neutral-800 leading-snug hover:underline line-clamp-2">
             {data.name}
           </h3>
         </Link>
 
-        <div className="mt-auto pt-3 flex items-center justify-between">
-          <span className="text-lg font-bold text-neutral-900">
+        {data.description && (
+          <p className="text-xs text-neutral-600 line-clamp-2">
+            {data.description}
+          </p>
+        )}
+
+        <div className="mt-auto pt-2 flex items-center justify-between gap-2">
+          <span className="text-base font-bold text-neutral-900">
             ₱{Number(data.price).toLocaleString()}
           </span>
           <Link to={`/menu/${data.id}`}>
-            <Button size="sm" className="rounded-full bg-black text-white hover:bg-black/80 px-4">
-              Buy Now
+            <Button
+              size="sm"
+              className="rounded-full bg-black text-white hover:bg-black/80 px-3 text-xs h-7"
+            >
+              Buy
             </Button>
           </Link>
         </div>

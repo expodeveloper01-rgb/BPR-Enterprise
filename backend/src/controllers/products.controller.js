@@ -1,4 +1,4 @@
-const prisma = require("../utils/prisma");
+const { query } = require("../utils/prisma");
 
 const PRODUCT_JOIN_SQL = `
   SELECT
@@ -106,12 +106,12 @@ const getProducts = async (req, res, next) => {
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-    const rows = await prisma.$queryRawUnsafe(
+    const result = await query(
       `${PRODUCT_JOIN_SQL} ${where} ORDER BY p."createdAt" DESC`,
-      ...params,
+      params,
     );
 
-    res.json(rowsToProducts(rows).map(formatProduct));
+    res.json(rowsToProducts(result.rows).map(formatProduct));
   } catch (err) {
     next(err);
   }
@@ -119,15 +119,14 @@ const getProducts = async (req, res, next) => {
 
 const getProductById = async (req, res, next) => {
   try {
-    const rows = await prisma.$queryRawUnsafe(
-      `${PRODUCT_JOIN_SQL} WHERE p.id = $1`,
+    const result = await query(`${PRODUCT_JOIN_SQL} WHERE p.id = $1`, [
       req.params.id,
-    );
+    ]);
 
-    if (!rows.length)
+    if (!result.rows.length)
       return res.status(404).json({ message: "Product not found" });
 
-    res.json(formatProduct(rowsToProducts(rows)[0]));
+    res.json(formatProduct(rowsToProducts(result.rows)[0]));
   } catch (err) {
     next(err);
   }
@@ -152,31 +151,43 @@ const createProduct = async (req, res, next) => {
       return res.status(400).json({ message: "name and price are required" });
     }
 
-    const product = await prisma.product.create({
-      data: {
+    // Insert product
+    const productResult = await query(
+      `INSERT INTO "Product" (id, name, description, price, "isFeatured", "isArchived", "categoryId", "sizeId", "kitchenId", "cuisineId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       RETURNING id`,
+      [
         name,
-        description: description ?? "",
-        price: parseFloat(price),
-        isFeatured: !!isFeatured,
-        isArchived: !!isArchived,
-        categoryId: categoryId || null,
-        sizeId: sizeId || null,
-        kitchenId: kitchenId || null,
-        cuisineId: cuisineId || null,
-        images: {
-          create: (images || []).map((url) => ({ url })),
-        },
-      },
-      include: {
-        images: true,
-        category: true,
-        size: true,
-        kitchen: true,
-        cuisine: true,
-      },
-    });
+        description ?? "",
+        parseFloat(price),
+        !!isFeatured,
+        !!isArchived,
+        categoryId || null,
+        sizeId || null,
+        kitchenId || null,
+        cuisineId || null,
+      ],
+    );
 
-    res.status(201).json(formatProduct(product));
+    const productId = productResult.rows[0].id;
+
+    // Insert images
+    if (images && images.length > 0) {
+      for (const url of images) {
+        await query(
+          `INSERT INTO "Image" (id, url, "productId", "createdAt", "updatedAt")
+           VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())`,
+          [url, productId],
+        );
+      }
+    }
+
+    // Fetch the complete product
+    const result = await query(`${PRODUCT_JOIN_SQL} WHERE p.id = $1`, [
+      productId,
+    ]);
+
+    res.status(201).json(formatProduct(rowsToProducts(result.rows)[0]));
   } catch (err) {
     next(err);
   }
@@ -197,43 +208,86 @@ const updateProduct = async (req, res, next) => {
       images,
     } = req.body;
 
-    const existing = await prisma.product.findUnique({
-      where: { id: req.params.id },
-    });
-    if (!existing)
+    const existingResult = await query(
+      'SELECT id FROM "Product" WHERE id = $1',
+      [req.params.id],
+    );
+
+    if (!existingResult.rows.length)
       return res.status(404).json({ message: "Product not found" });
 
-    // Replace images if provided
-    if (images !== undefined) {
-      await prisma.image.deleteMany({ where: { productId: req.params.id } });
+    // Build update query dynamically
+    const updates = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramIndex++}`);
+      params.push(name);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${paramIndex++}`);
+      params.push(description);
+    }
+    if (price !== undefined) {
+      updates.push(`price = $${paramIndex++}`);
+      params.push(parseFloat(price));
+    }
+    if (isFeatured !== undefined) {
+      updates.push(`"isFeatured" = $${paramIndex++}`);
+      params.push(!!isFeatured);
+    }
+    if (isArchived !== undefined) {
+      updates.push(`"isArchived" = $${paramIndex++}`);
+      params.push(!!isArchived);
+    }
+    if (categoryId !== undefined) {
+      updates.push(`"categoryId" = $${paramIndex++}`);
+      params.push(categoryId || null);
+    }
+    if (sizeId !== undefined) {
+      updates.push(`"sizeId" = $${paramIndex++}`);
+      params.push(sizeId || null);
+    }
+    if (kitchenId !== undefined) {
+      updates.push(`"kitchenId" = $${paramIndex++}`);
+      params.push(kitchenId || null);
+    }
+    if (cuisineId !== undefined) {
+      updates.push(`"cuisineId" = $${paramIndex++}`);
+      params.push(cuisineId || null);
     }
 
-    const product = await prisma.product.update({
-      where: { id: req.params.id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description }),
-        ...(price !== undefined && { price: parseFloat(price) }),
-        ...(isFeatured !== undefined && { isFeatured: !!isFeatured }),
-        ...(isArchived !== undefined && { isArchived: !!isArchived }),
-        ...(categoryId !== undefined && { categoryId: categoryId || null }),
-        ...(sizeId !== undefined && { sizeId: sizeId || null }),
-        ...(kitchenId !== undefined && { kitchenId: kitchenId || null }),
-        ...(cuisineId !== undefined && { cuisineId: cuisineId || null }),
-        ...(images !== undefined && {
-          images: { create: images.map((url) => ({ url })) },
-        }),
-      },
-      include: {
-        images: true,
-        category: true,
-        size: true,
-        kitchen: true,
-        cuisine: true,
-      },
-    });
+    updates.push(`"updatedAt" = NOW()`);
+    params.push(req.params.id);
 
-    res.json(formatProduct(product));
+    if (updates.length > 1) {
+      const updateQuery = `UPDATE "Product" SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING id`;
+      await query(updateQuery, params);
+    }
+
+    // Delete and recreate images if provided
+    if (images !== undefined) {
+      await query('DELETE FROM "Image" WHERE "productId" = $1', [
+        req.params.id,
+      ]);
+      if (images.length > 0) {
+        for (const url of images) {
+          await query(
+            `INSERT INTO "Image" (id, url, "productId", "createdAt", "updatedAt")
+             VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())`,
+            [url, req.params.id],
+          );
+        }
+      }
+    }
+
+    // Fetch the complete product
+    const result = await query(`${PRODUCT_JOIN_SQL} WHERE p.id = $1`, [
+      req.params.id,
+    ]);
+
+    res.json(formatProduct(rowsToProducts(result.rows)[0]));
   } catch (err) {
     next(err);
   }
@@ -241,13 +295,15 @@ const updateProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
   try {
-    const existing = await prisma.product.findUnique({
-      where: { id: req.params.id },
-    });
-    if (!existing)
+    const existingResult = await query(
+      'SELECT id FROM "Product" WHERE id = $1',
+      [req.params.id],
+    );
+
+    if (!existingResult.rows.length)
       return res.status(404).json({ message: "Product not found" });
 
-    await prisma.product.delete({ where: { id: req.params.id } });
+    await query('DELETE FROM "Product" WHERE id = $1', [req.params.id]);
     res.json({ message: "Product deleted" });
   } catch (err) {
     next(err);

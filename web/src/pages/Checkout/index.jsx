@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Banknote, Truck, ChevronRight, Home, CheckCircle2, Copy } from "lucide-react";
+import {
+  Banknote,
+  Truck,
+  ChevronRight,
+  Home,
+  CheckCircle2,
+  Copy,
+} from "lucide-react";
 import apiClient from "@/lib/api-client";
 import useCart from "@/hooks/use-carts";
 import useAuth from "@/hooks/use-auth";
@@ -32,12 +39,17 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
 
-  const totalPrice = cart.items.reduce((t, i) => t + Number(i.price * i.qty), 0);
+  const totalPrice = cart.items.reduce(
+    (t, i) => t + Number(i.price * i.qty),
+    0,
+  );
 
   if (!user) {
     return (
       <Container className="px-4 md:px-12 py-20 text-center">
-        <p className="text-muted-foreground mb-4">Please sign in to place an order.</p>
+        <p className="text-muted-foreground mb-4">
+          Please sign in to place an order.
+        </p>
         <Link to="/sign-in">
           <Button className="rounded-full bg-black text-white">Sign In</Button>
         </Link>
@@ -56,14 +68,12 @@ export default function CheckoutPage() {
     try {
       if (method === "cod") {
         const { data } = await apiClient.post("/checkout/cod", {
-          products: cart.items,
           phone,
           address,
         });
         setOrderId(data.orderId);
       } else {
         const { data } = await apiClient.post("/checkout/bank-transfer", {
-          products: cart.items,
           phone,
           address,
           referenceNumber: refNumber,
@@ -73,7 +83,9 @@ export default function CheckoutPage() {
       cart.removeAll();
       setSuccess(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Order failed. Please try again.");
+      toast.error(
+        err.response?.data?.message || "Order failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -90,16 +102,19 @@ export default function CheckoutPage() {
           <h1 className="text-2xl font-bold text-neutral-800">Order Placed!</h1>
           {method === "cod" ? (
             <p className="text-muted-foreground text-sm">
-              Your Cash on Delivery order has been received. Pay when your order arrives.
+              Your Cash on Delivery order has been received. Pay when your order
+              arrives.
             </p>
           ) : (
             <p className="text-muted-foreground text-sm">
-              Your order is pending payment verification. We&apos;ll confirm once the transfer is verified.
+              Your order is pending payment verification. We&apos;ll confirm
+              once the transfer is verified.
             </p>
           )}
           {orderId && (
             <p className="text-xs text-neutral-500">
-              Order ID: <span className="font-mono font-semibold">{orderId}</span>
+              Order ID:{" "}
+              <span className="font-mono font-semibold">{orderId}</span>
             </p>
           )}
           <div className="flex gap-3 justify-center pt-2">
@@ -124,24 +139,34 @@ export default function CheckoutPage() {
     <Container className="px-4 md:px-12 py-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
-        <Link to="/" className="flex items-center gap-1 hover:text-neutral-800 transition"><Home className="w-4 h-4" />Home</Link>
+        <Link
+          to="/"
+          className="flex items-center gap-1 hover:text-neutral-800 transition"
+        >
+          <Home className="w-4 h-4" />
+          Home
+        </Link>
         <ChevronRight className="w-4 h-4" />
-        <Link to="/cart" className="hover:text-neutral-800 transition">Cart</Link>
+        <Link to="/cart" className="hover:text-neutral-800 transition">
+          Cart
+        </Link>
         <ChevronRight className="w-4 h-4" />
         <span className="text-neutral-800 font-medium">Checkout</span>
       </div>
 
-      <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-8">Checkout</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-8">
+        Checkout
+      </h1>
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-
           {/* Left — details + payment */}
           <div className="flex-1 space-y-6">
-
             {/* Delivery details */}
             <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
-              <h2 className="font-semibold text-neutral-800">Delivery Details</h2>
+              <h2 className="font-semibold text-neutral-800">
+                Delivery Details
+              </h2>
               <div>
                 <label className={labelCls}>Phone Number</label>
                 <input
@@ -204,7 +229,10 @@ export default function CheckoutPage() {
               {method === "cod" && (
                 <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800">
                   <p className="font-medium mb-0.5">Cash on Delivery</p>
-                  <p className="text-amber-700">Pay with cash when your order is delivered to your address. Please prepare the exact amount.</p>
+                  <p className="text-amber-700">
+                    Pay with cash when your order is delivered to your address.
+                    Please prepare the exact amount.
+                  </p>
                 </div>
               )}
 
@@ -213,26 +241,54 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   {/* Bank details card */}
                   <div className="rounded-xl bg-blue-50 border border-blue-100 p-4 space-y-2 text-sm">
-                    <p className="font-semibold text-blue-900">Transfer to any of the following:</p>
+                    <p className="font-semibold text-blue-900">
+                      Transfer to any of the following:
+                    </p>
                     <div className="space-y-1 text-blue-800">
                       <div className="flex items-center justify-between">
-                        <span><span className="font-medium">BDO</span> — {BANK_DETAILS.number}</span>
-                        <button type="button" onClick={() => { navigator.clipboard.writeText(BANK_DETAILS.number); toast.success("Copied!"); }} className="text-blue-500 hover:text-blue-700">
+                        <span>
+                          <span className="font-medium">BDO</span> —{" "}
+                          {BANK_DETAILS.number}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(BANK_DETAILS.number);
+                            toast.success("Copied!");
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span><span className="font-medium">GCash</span> — {BANK_DETAILS.gcash}</span>
-                        <button type="button" onClick={() => { navigator.clipboard.writeText(BANK_DETAILS.gcash); toast.success("Copied!"); }} className="text-blue-500 hover:text-blue-700">
+                        <span>
+                          <span className="font-medium">GCash</span> —{" "}
+                          {BANK_DETAILS.gcash}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(BANK_DETAILS.gcash);
+                            toast.success("Copied!");
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <p className="text-blue-700 pt-1">Account Name: <span className="font-medium">{BANK_DETAILS.name}</span></p>
+                      <p className="text-blue-700 pt-1">
+                        Account Name:{" "}
+                        <span className="font-medium">{BANK_DETAILS.name}</span>
+                      </p>
                     </div>
                   </div>
 
                   <div>
-                    <label className={labelCls}>Reference / Transaction Number <span className="text-red-500">*</span></label>
+                    <label className={labelCls}>
+                      Reference / Transaction Number{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       required={method === "bank_transfer"}
@@ -241,7 +297,10 @@ export default function CheckoutPage() {
                       placeholder="e.g. 1234567890"
                       className={inputCls}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Enter the reference number from your transfer confirmation.</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter the reference number from your transfer
+                      confirmation.
+                    </p>
                   </div>
                 </div>
               )}
@@ -251,19 +310,35 @@ export default function CheckoutPage() {
           {/* Right — order summary */}
           <div className="w-full lg:w-80 shrink-0 sticky top-24">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-neutral-800">Order Summary</h2>
+              <h2 className="text-lg font-semibold text-neutral-800">
+                Order Summary
+              </h2>
               <Separator />
 
               <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                 {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-sm gap-3">
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between text-sm gap-3"
+                  >
                     <div className="flex items-center gap-2 min-w-0">
-                      <img src={item.images?.[0]?.url} alt={item.name} className="w-9 h-9 rounded-lg object-cover shrink-0 bg-gray-100" />
-                      <span className="truncate text-neutral-700">{item.name}</span>
+                      <img
+                        src={item.images?.[0]?.url}
+                        alt={item.name}
+                        className="w-9 h-9 rounded-lg object-cover shrink-0 bg-gray-100"
+                      />
+                      <span className="truncate text-neutral-700">
+                        {item.name}
+                      </span>
                     </div>
                     <span className="shrink-0 text-neutral-800 font-medium">
                       ₱{(item.price * item.qty).toLocaleString()}
-                      {item.qty > 1 && <span className="text-muted-foreground font-normal"> ×{item.qty}</span>}
+                      {item.qty > 1 && (
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          ×{item.qty}
+                        </span>
+                      )}
                     </span>
                   </div>
                 ))}
@@ -294,10 +369,17 @@ export default function CheckoutPage() {
                 disabled={loading}
                 className="w-full h-11 rounded-xl bg-black text-white hover:bg-black/80 font-semibold"
               >
-                {loading ? "Placing Order…" : method === "cod" ? "Place COD Order" : "Confirm Bank Transfer"}
+                {loading
+                  ? "Placing Order…"
+                  : method === "cod"
+                    ? "Place COD Order"
+                    : "Confirm Bank Transfer"}
               </Button>
 
-              <Link to="/cart" className="block text-center text-xs text-muted-foreground hover:text-neutral-800 transition">
+              <Link
+                to="/cart"
+                className="block text-center text-xs text-muted-foreground hover:text-neutral-800 transition"
+              >
                 ← Back to cart
               </Link>
             </div>

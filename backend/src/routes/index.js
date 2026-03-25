@@ -8,6 +8,8 @@ router.use("/kitchens", require("./kitchens.routes"));
 router.use("/cuisines", require("./cuisines.routes"));
 router.use("/orders", require("./orders.routes"));
 router.use("/checkout", require("./checkout.routes"));
+router.use("/cart", require("./cart.routes"));
+router.use("/upload", require("./upload.routes"));
 router.use("/admin", require("./admin.routes"));
 
 module.exports = router;

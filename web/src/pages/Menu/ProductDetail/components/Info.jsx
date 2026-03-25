@@ -1,28 +1,48 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import useCart from "@/hooks/use-carts";
+import useAuth from "@/hooks/use-auth";
+import toast from "react-hot-toast";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 
 const Info = ({ product }) => {
   const [qty, setQty] = useState(1);
   const cart = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const addToCart = (data) => {
+    if (!user) {
+      toast.error("Please sign in to add items to cart");
+      navigate("/sign-in");
+      return;
+    }
     cart.addItem({ ...data, qty });
   };
 
-  const tags = [product.cuisine, product.category, product.kitchen, product.size].filter(Boolean);
+  const tags = [
+    product.cuisine,
+    product.category,
+    product.kitchen,
+    product.size,
+  ].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-5">
       {/* Name + tags */}
       <div>
-        <h1 className="text-3xl font-bold text-neutral-900 leading-tight">{product.name}</h1>
+        <h1 className="text-3xl font-bold text-neutral-900 leading-tight">
+          {product.name}
+        </h1>
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {tags.map((tag) => (
-              <span key={tag} className="px-3 py-1 rounded-full bg-gray-100 text-xs font-medium text-neutral-600 capitalize">
+              <span
+                key={tag}
+                className="px-3 py-1 rounded-full bg-gray-100 text-xs font-medium text-neutral-600 capitalize"
+              >
                 {tag}
               </span>
             ))}
@@ -34,20 +54,31 @@ const Info = ({ product }) => {
 
       {/* Price */}
       <div>
-        <p className="text-xs text-neutral-400 uppercase tracking-widest font-medium mb-1">Price</p>
-        <p className="text-4xl font-bold text-neutral-900">₱{Number(product.price).toLocaleString("en-PH", { minimumFractionDigits: 2 })}</p>
+        <p className="text-xs text-neutral-400 uppercase tracking-widest font-medium mb-1">
+          Price
+        </p>
+        <p className="text-4xl font-bold text-neutral-900">
+          ₱
+          {Number(product.price).toLocaleString("en-PH", {
+            minimumFractionDigits: 2,
+          })}
+        </p>
       </div>
 
       {/* Description */}
       {product.description && (
-        <p className="text-sm text-neutral-600 leading-relaxed">{product.description}</p>
+        <p className="text-sm text-neutral-600 leading-relaxed">
+          {product.description}
+        </p>
       )}
 
       <Separator />
 
       {/* Quantity */}
       <div>
-        <p className="text-xs text-neutral-400 uppercase tracking-widest font-medium mb-3">Quantity</p>
+        <p className="text-xs text-neutral-400 uppercase tracking-widest font-medium mb-3">
+          Quantity
+        </p>
         <div className="flex items-center gap-4">
           <button
             type="button"

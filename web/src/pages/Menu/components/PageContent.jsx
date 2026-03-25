@@ -22,7 +22,10 @@ const PageContent = ({ products }) => {
     <div className="pt-4 pb-16">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
-        <Link to="/" className="flex items-center gap-1 hover:text-neutral-800 transition-colors">
+        <Link
+          to="/"
+          className="flex items-center gap-1 hover:text-neutral-800 transition-colors"
+        >
           <Home className="w-4 h-4" />
           Home
         </Link>
@@ -58,7 +61,7 @@ const PageContent = ({ products }) => {
 
       {/* Products grid */}
       {products.length > 0 ? (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {products.map((product) => (
             <PopularContent data={product} key={product.id} />
           ))}
@@ -68,8 +71,12 @@ const PageContent = ({ products }) => {
           <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center">
             <ShoppingBag className="w-7 h-7 text-neutral-400" />
           </div>
-          <p className="text-lg font-semibold text-neutral-700">No products found</p>
-          <p className="text-sm text-muted-foreground">Try adjusting or clearing your filters.</p>
+          <p className="text-lg font-semibold text-neutral-700">
+            No products found
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Try adjusting or clearing your filters.
+          </p>
         </div>
       )}
     </div>

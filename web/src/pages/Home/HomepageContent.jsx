@@ -118,23 +118,25 @@ const HomepageContent = ({ products, newProducts }) => {
         </section>
 
         {/* Popular */}
-        <section className="flex flex-col gap-12 py-24">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <img src={logo} alt="logo" className="w-48" />
-            <h2 className="text-5xl font-bold">Popular Menu</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Omnis
-              voluptate fuga pariatur
-              <br /> inventore quidem nisi vitae, molestiae architecto corporis
-              id!
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 gap-y-20 md:gap-8 my-4 py-12">
-            {products?.slice(0, 4).map((item) => (
-              <PopularContent key={item.id} data={item} />
-            ))}
-          </div>
-        </section>
+        {products && products.length > 0 && (
+          <section className="flex flex-col gap-12 py-24">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <img src={logo} alt="logo" className="w-48" />
+              <h2 className="text-5xl font-bold">Popular Menu</h2>
+              <p className="text-sm text-muted-foreground text-center">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Omnis
+                voluptate fuga pariatur
+                <br /> inventore quidem nisi vitae, molestiae architecto
+                corporis id!
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 my-4 py-12">
+              {products?.slice(0, 4).map((item) => (
+                <PopularContent key={item.id} data={item} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Why Us */}
         <section className="py-24 flex flex-col items-center justify-center">

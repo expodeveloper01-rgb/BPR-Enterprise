@@ -11,12 +11,18 @@ import OrdersPage from "@/pages/Orders";
 import AboutPage from "@/pages/About";
 import SignInPage from "@/pages/Auth/SignIn";
 import SignUpPage from "@/pages/Auth/SignUp";
+import ForgotPasswordPage from "@/pages/Auth/ForgotPassword";
+import ResetPasswordPage from "@/pages/Auth/ResetPassword";
 import NotFoundPage from "@/pages/NotFound";
 import SellerDashboard from "@/pages/Seller";
 import SellerProducts from "@/pages/Seller/Products";
 import ProductForm from "@/pages/Seller/Products/ProductForm";
 import SellerOrders from "@/pages/Seller/Orders";
 import SellerUsers from "@/pages/Seller/Users";
+import SellerCategories from "@/pages/Seller/Categories";
+import SellerSizes from "@/pages/Seller/Sizes";
+import SellerKitchens from "@/pages/Seller/Kitchens";
+import SellerCuisines from "@/pages/Seller/Cuisines";
 import CheckoutPage from "@/pages/Checkout";
 
 const ScrollToTop = () => {
@@ -42,8 +48,15 @@ function AppRoutes() {
           <Route path="/seller" element={<SellerDashboard />} />
           <Route path="/seller/products" element={<SellerProducts />} />
           <Route path="/seller/products/new" element={<ProductForm />} />
-          <Route path="/seller/products/:productId/edit" element={<ProductForm />} />
+          <Route
+            path="/seller/products/:productId/edit"
+            element={<ProductForm />}
+          />
           <Route path="/seller/orders" element={<SellerOrders />} />
+          <Route path="/seller/categories" element={<SellerCategories />} />
+          <Route path="/seller/sizes" element={<SellerSizes />} />
+          <Route path="/seller/kitchens" element={<SellerKitchens />} />
+          <Route path="/seller/cuisines" element={<SellerCuisines />} />
           <Route path="/seller/users" element={<SellerUsers />} />
         </Routes>
       ) : (
@@ -60,6 +73,8 @@ function AppRoutes() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/sign-in/*" element={<SignInPage />} />
               <Route path="/sign-up/*" element={<SignUpPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
@@ -72,7 +87,9 @@ function AppRoutes() {
 
 function App() {
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <AppRoutes />
     </BrowserRouter>
   );
