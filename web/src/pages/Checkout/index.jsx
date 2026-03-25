@@ -118,12 +118,12 @@ export default function CheckoutPage() {
             </p>
           )}
           <div className="flex gap-3 justify-center pt-2">
-            <Link to="/orders">
+            <Link to="/uncle-brew/orders">
               <Button className="rounded-full bg-black text-white hover:bg-black/80 px-6">
                 View Orders
               </Button>
             </Link>
-            <Link to="/menu">
+            <Link to="/uncle-brew/menu">
               <Button variant="outline" className="rounded-full px-6">
                 Continue Shopping
               </Button>
@@ -140,14 +140,17 @@ export default function CheckoutPage() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
         <Link
-          to="/"
+          to="/uncle-brew"
           className="flex items-center gap-1 hover:text-neutral-800 transition"
         >
           <Home className="w-4 h-4" />
           Home
         </Link>
         <ChevronRight className="w-4 h-4" />
-        <Link to="/cart" className="hover:text-neutral-800 transition">
+        <Link
+          to="/uncle-brew/cart"
+          className="hover:text-neutral-800 transition"
+        >
           Cart
         </Link>
         <ChevronRight className="w-4 h-4" />
@@ -377,7 +380,7 @@ export default function CheckoutPage() {
               </Button>
 
               <Link
-                to="/cart"
+                to="/uncle-brew/cart"
                 className="block text-center text-xs text-muted-foreground hover:text-neutral-800 transition"
               >
                 ← Back to cart

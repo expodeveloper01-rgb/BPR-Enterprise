@@ -3,14 +3,23 @@ import { Link, useLocation } from "react-router-dom";
 
 const MainNav = ({ className, scrolled }) => {
   const { pathname } = useLocation();
+  const isUncleBrew = pathname.startsWith("/uncle-brew");
 
-  const routes = [
-    { to: "/", label: "Home" },
-    { to: "/menu", label: "Menu" },
-    { to: "/orders", label: "Orders" },
-    { to: "/about", label: "About" },
-    { to: "/contact", label: "Contact" },
-  ];
+  // Build routes based on current brand
+  const routes = isUncleBrew
+    ? [
+        { to: "/uncle-brew", label: "Home" },
+        { to: "/uncle-brew/menu", label: "Menu" },
+        { to: "/uncle-brew/orders", label: "Orders" },
+        { to: "/uncle-brew/about", label: "About" },
+        { to: "/uncle-brew/contact", label: "Contact" },
+      ]
+    : [
+        { to: "/", label: "Home" },
+        { to: "/browse-stores", label: "Browse Stores" },
+        { to: "/about", label: "About" },
+        { to: "/contact", label: "Contact" },
+      ];
 
   return (
     <div className="ml-auto">

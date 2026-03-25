@@ -1,22 +1,22 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
-import useCart from "@/hooks/use-carts";
 import useAuth from "@/hooks/use-auth";
 import toast from "react-hot-toast";
 
 export const PopularContent = ({ data }) => {
-  const cart = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const addToCart = () => {
+  const handleAddToCart = (e) => {
+    e.preventDefault();
     if (!user) {
       toast.error("Please sign in to add items to cart");
       navigate("/sign-in");
       return;
     }
-    cart.addItem({ ...data, qty: 1 });
+    // Navigate to product details where they can select size
+    navigate(`/menu/${data.id}`);
   };
 
   return (
@@ -32,10 +32,7 @@ export const PopularContent = ({ data }) => {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            addToCart();
-          }}
+          onClick={handleAddToCart}
           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
         >
           <ShoppingCart className="w-3 h-3" />

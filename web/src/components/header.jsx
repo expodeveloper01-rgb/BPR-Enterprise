@@ -7,8 +7,21 @@ import { useEffect, useRef, useState } from "react";
 import CartActionButton from "./cart-action";
 import useAuth from "@/hooks/use-auth";
 import useCart from "@/hooks/use-carts";
-import logo from "/assets/img/uncle-brew.png";
-import { Menu, X } from "lucide-react";
+import { useStore } from "@/context/StoreContext";
+import { Menu, X, Store } from "lucide-react";
+
+const BRANDS = {
+  belapari: {
+    id: "belapari",
+    name: "BeLaPaRi Ventures",
+    logo: "/assets/img/belapari-icon.png",
+  },
+  "uncle-brew": {
+    id: "uncle-brew",
+    name: "Uncle Brew",
+    logo: "/assets/img/uncle-brew.png",
+  },
+};
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -17,11 +30,18 @@ const Header = () => {
   const dropdownRef = useRef(null);
   const { user, logout } = useAuth();
   const { removeAll: clearCart } = useCart();
+  const { activeStore, clearStore } = useStore();
   const isSignedIn = !!user;
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isHome = pathname === "/";
   const transparent = isHome && !scrolled;
+  const isUncleBrew = pathname.startsWith("/uncle-brew");
+
+  // Determine brand directly from pathname
+  const currentBrand = pathname.startsWith("/uncle-brew")
+    ? BRANDS["uncle-brew"]
+    : BRANDS.belapari;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -40,27 +60,40 @@ const Header = () => {
   }, []);
 
   const handleSignOut = () => {
-    logout();
     clearCart();
+    clearStore();
+    logout();
     setDropdownOpen(false);
-    navigate("/");
+    navigate("/"); // Redirect to BeLaPaRi homepage
   };
+
+  // Determine logo link based on current brand
+  const logoLink = currentBrand.id === "belapari" ? "/" : "/uncle-brew";
 
   return (
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled || !isHome ? "bg-white shadow-md" : "bg-transparent",
+        scrolled
+          ? "bg-white shadow-md"
+          : isHome
+            ? "bg-transparent"
+            : "bg-white",
       )}
     >
       <Container>
         <div className="relative px-4 sm:px-6 lg:px-12 flex h-16 items-center">
           <Link
-            to="/"
+            to={logoLink}
             className="flex items-center shrink-0"
             onClick={() => setMobileOpen(false)}
           >
-            <img src={logo} alt="logo" className="w-24 md:w-28" />
+            <img
+              key={currentBrand.id}
+              src={currentBrand.logo}
+              alt={currentBrand.name}
+              className="w-14 md:w-18"
+            />
           </Link>
 
           {/* Desktop nav */}
@@ -101,12 +134,22 @@ const Header = () => {
                         </Link>
                       )}
                       <Link
-                        to="/orders"
+                        to="/uncle-brew/orders"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-gray-50 transition-colors"
                       >
                         My Orders
                       </Link>
+                      <button
+                        onClick={() => {
+                          navigate("/stores");
+                          setDropdownOpen(false);
+                        }}
+                        className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-gray-50 transition-colors border-t border-gray-100 mt-2 pt-2"
+                      >
+                        <Store size={16} />
+                        Switch Store
+                      </button>
                       <button
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
@@ -126,7 +169,7 @@ const Header = () => {
                     className={cn(
                       "rounded-full text-sm font-medium transition-all",
                       transparent
-                        ? "text-white hover:bg-white/10"
+                        ? "text-neutral-900 hover:bg-black/5"
                         : "text-neutral-700 hover:bg-gray-100",
                     )}
                   >
@@ -136,12 +179,7 @@ const Header = () => {
                 <Link to="/sign-up" className="hidden md:block">
                   <Button
                     size="sm"
-                    className={cn(
-                      "rounded-full text-sm font-medium transition-all",
-                      transparent
-                        ? "bg-white text-black hover:bg-white/90"
-                        : "bg-black text-white hover:bg-black/80",
-                    )}
+                    className="rounded-full text-sm font-medium transition-all bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700"
                   >
                     Sign up
                   </Button>
@@ -168,25 +206,36 @@ const Header = () => {
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
           <nav className="flex flex-col px-6 py-4 gap-1">
-            {[
-              { to: "/", label: "Home" },
-              { to: "/menu", label: "Menu" },
-              { to: "/orders", label: "Orders" },
-              { to: "/about", label: "About" },
-              { to: "/contact", label: "Contact" },
-              ...(user?.role === "admin"
-                ? [{ to: "/seller", label: "Dashboard" }]
-                : []),
-            ].map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={() => setMobileOpen(false)}
-                className="py-3 text-base font-medium text-neutral-700 border-b border-gray-100 last:border-0 hover:text-black transition-colors"
-              >
-                {label}
-              </Link>
-            ))}
+            {(isUncleBrew
+              ? [
+                  { to: "/uncle-brew", label: "Home" },
+                  { to: "/uncle-brew/menu", label: "Menu" },
+                  { to: "/uncle-brew/orders", label: "Orders" },
+                  { to: "/uncle-brew/about", label: "About" },
+                  { to: "/uncle-brew/contact", label: "Contact" },
+                ]
+              : [
+                  { to: "/", label: "Home" },
+                  { to: "/browse-stores", label: "Browse Stores" },
+                  { to: "/about", label: "About" },
+                  { to: "/contact", label: "Contact" },
+                ]
+            )
+              .concat(
+                user?.role === "admin"
+                  ? [{ to: "/seller", label: "Dashboard" }]
+                  : [],
+              )
+              .map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setMobileOpen(false)}
+                  className="py-3 text-base font-medium text-neutral-700 border-b border-gray-100 last:border-0 hover:text-black transition-colors"
+                >
+                  {label}
+                </Link>
+              ))}
             <div className="flex gap-3 pt-4">
               <Link
                 to="/sign-in"

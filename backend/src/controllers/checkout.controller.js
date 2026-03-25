@@ -100,7 +100,7 @@ const createCODOrder = async (req, res, next) => {
 
     // Get cart items from database
     const cartResult = await query(
-      'SELECT "productId", quantity FROM "Cart" WHERE "userId" = $1',
+      'SELECT "productId", "sizeId", quantity FROM "Cart" WHERE "userId" = $1',
       [userId],
     );
 
@@ -117,12 +117,17 @@ const createCODOrder = async (req, res, next) => {
 
     const orderId = orderResult.rows[0].id;
 
-    // Create order items with quantities
+    // Create order items with quantities and sizes
     for (const cartItem of cartResult.rows) {
       await query(
-        `INSERT INTO "OrderItem" (id, "orderId", "productId", quantity, "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
-        [orderId, cartItem.productId, cartItem.quantity],
+        `INSERT INTO "OrderItem" (id, "orderId", "productId", "sizeId", quantity, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
+        [
+          orderId,
+          cartItem.productId,
+          cartItem.sizeId || null,
+          cartItem.quantity,
+        ],
       );
     }
 
@@ -150,7 +155,7 @@ const createBankTransferOrder = async (req, res, next) => {
 
     // Get cart items from database
     const cartResult = await query(
-      'SELECT "productId", quantity FROM "Cart" WHERE "userId" = $1',
+      'SELECT "productId", "sizeId", quantity FROM "Cart" WHERE "userId" = $1',
       [userId],
     );
 
@@ -167,12 +172,17 @@ const createBankTransferOrder = async (req, res, next) => {
 
     const orderId = orderResult.rows[0].id;
 
-    // Create order items with quantities
+    // Create order items with quantities and sizes
     for (const cartItem of cartResult.rows) {
       await query(
-        `INSERT INTO "OrderItem" (id, "orderId", "productId", quantity, "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
-        [orderId, cartItem.productId, cartItem.quantity],
+        `INSERT INTO "OrderItem" (id, "orderId", "productId", "sizeId", quantity, "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
+        [
+          orderId,
+          cartItem.productId,
+          cartItem.sizeId || null,
+          cartItem.quantity,
+        ],
       );
     }
 

@@ -23,14 +23,17 @@ const PageContent = ({ products }) => {
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
         <Link
-          to="/"
+          to="/uncle-brew"
           className="flex items-center gap-1 hover:text-neutral-800 transition-colors"
         >
           <Home className="w-4 h-4" />
           Home
         </Link>
         <ChevronRight className="w-4 h-4" />
-        <Link to="/menu" className="hover:text-neutral-800 transition-colors">
+        <Link
+          to="/uncle-brew/menu"
+          className="hover:text-neutral-800 transition-colors"
+        >
           Menu
         </Link>
         {searchParams.get("category") && (

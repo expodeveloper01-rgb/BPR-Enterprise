@@ -46,10 +46,13 @@ const OrderItem = ({ order }) => {
         {/* Item names */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-neutral-800 truncate">
-            {order.orderItems.map((i) => i.name).join(", ")}
+            {order.orderItems
+              .map((i) => (i.size ? `${i.name} (${i.size})` : i.name))
+              .join(", ")}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {order.orderItems.length} {order.orderItems.length === 1 ? "item" : "items"}
+            {order.orderItems.length}{" "}
+            {order.orderItems.length === 1 ? "item" : "items"}
           </p>
         </div>
 

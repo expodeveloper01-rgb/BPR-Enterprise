@@ -31,7 +31,7 @@ const ProductPage = () => {
       <Container className="px-4 md:px-12 bg-white rounded-lg my-4">
         <Box className="text-neutral-700 text-sm flex items-center mt-12">
           <Link
-            to="/"
+            to="/uncle-brew/menu"
             className="flex items-center gap-2 hover:underline hover:text-pink-500"
           >
             <Home className="w-5 h-5" />
@@ -40,7 +40,7 @@ const ProductPage = () => {
 
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
           <Link
-            to="/menu"
+            to="/uncle-brew/menu"
             className="flex items-center gap-2 text-muted-foreground hover:underline hover:text-pink-500"
           >
             Products

@@ -1,17 +1,23 @@
 const { query } = require("../utils/prisma");
 
-// Get user's cart with product details
+// Get user's cart with product details and size
 const getCart = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
     const result = await query(
-      `SELECT c.id, c."productId", c.quantity, p.name, p.price, i.url
+      `SELECT DISTINCT ON (c.id)
+              c.id, c."productId", c."sizeId", c.quantity, p.name, p.price, i.url, 
+              s.name as "sizeName", cat.name as category, cu.name as cuisine, k.name as kitchen
        FROM "Cart" c
        JOIN "Product" p ON c."productId" = p.id
        LEFT JOIN "Image" i ON p.id = i."productId"
+       LEFT JOIN "Size" s ON c."sizeId" = s.id
+       LEFT JOIN "Category" cat ON p."categoryId" = cat.id
+       LEFT JOIN "Cuisine" cu ON p."cuisineId" = cu.id
+       LEFT JOIN "Kitchen" k ON p."kitchenId" = k.id
        WHERE c."userId" = $1
-       ORDER BY c."createdAt" DESC`,
+       ORDER BY c.id, i.id`,
       [userId],
     );
 
@@ -26,7 +32,7 @@ const getCart = async (req, res, next) => {
 const addToCart = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { productId, quantity = 1 } = req.body;
+    const { productId, sizeId, quantity = 1 } = req.body;
 
     if (!productId || quantity < 1) {
       return res.status(400).json({ message: "Invalid product or quantity" });
@@ -41,17 +47,46 @@ const addToCart = async (req, res, next) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    // Check if size exists (if provided)
+    if (sizeId) {
+      const sizeResult = await query('SELECT id FROM "Size" WHERE id = $1', [
+        sizeId,
+      ]);
+      if (sizeResult.rows.length === 0) {
+        return res.status(404).json({ message: "Size not found" });
+      }
+    }
+
     // Add or update cart item
     const result = await query(
-      `INSERT INTO "Cart" ("userId", "productId", quantity)
-       VALUES ($1, $2, $3)
-       ON CONFLICT ("userId", "productId")
-       DO UPDATE SET quantity = "Cart".quantity + $3, "updatedAt" = NOW()
+      `INSERT INTO "Cart" ("userId", "productId", "sizeId", quantity)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT ("userId", "productId", "sizeId")
+       DO UPDATE SET quantity = "Cart".quantity + $4, "updatedAt" = NOW()
        RETURNING *`,
-      [userId, productId, quantity],
+      [userId, productId, sizeId || null, quantity],
     );
 
-    res.status(201).json({ item: result.rows[0] });
+    const cartItem = result.rows[0];
+
+    // Fetch full details with product info
+    const detailResult = await query(
+      `SELECT DISTINCT ON (c.id)
+              c.id, c."productId", c."sizeId", c.quantity, p.name, p.price, i.url, 
+              s.name as "sizeName", cat.name as category, cu.name as cuisine, k.name as kitchen
+       FROM "Cart" c
+       JOIN "Product" p ON c."productId" = p.id
+       LEFT JOIN "Image" i ON p.id = i."productId"
+       LEFT JOIN "Size" s ON c."sizeId" = s.id
+       LEFT JOIN "Category" cat ON p."categoryId" = cat.id
+       LEFT JOIN "Cuisine" cu ON p."cuisineId" = cu.id
+       LEFT JOIN "Kitchen" k ON p."kitchenId" = k.id
+       WHERE c.id = $1
+       ORDER BY c.id, i.id`,
+      [cartItem.id],
+    );
+
+    res.status(201).json({ item: detailResult.rows[0] || cartItem });
   } catch (err) {
     next(err);
   }

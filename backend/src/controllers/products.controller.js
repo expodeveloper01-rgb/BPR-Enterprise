@@ -4,6 +4,7 @@ const PRODUCT_JOIN_SQL = `
   SELECT
     p.id, p.name, p.description, p.price, p."isFeatured", p."isArchived",
     p."createdAt", p."updatedAt", p."categoryId", p."sizeId", p."kitchenId", p."cuisineId",
+    p."categoryIds", p."sizeIds", p."kitchenIds", p."cuisineIds",
     cat.id AS "cat_id", cat.name AS "cat_name", cat."billboardLabel",
     s.id AS "size_id", s.name AS "size_name", s.value AS "size_value",
     k.id AS "kitchen_id", k.name AS "kitchen_name", k.value AS "kitchen_value",
@@ -35,6 +36,10 @@ function rowsToProducts(rows) {
         sizeId: row.sizeId,
         kitchenId: row.kitchenId,
         cuisineId: row.cuisineId,
+        categoryIds: row.categoryIds || [],
+        sizeIds: row.sizeIds || [],
+        kitchenIds: row.kitchenIds || [],
+        cuisineIds: row.cuisineIds || [],
         images: [],
         category: row.cat_id
           ? {
@@ -144,6 +149,10 @@ const createProduct = async (req, res, next) => {
       sizeId,
       kitchenId,
       cuisineId,
+      categoryIds,
+      sizeIds,
+      kitchenIds,
+      cuisineIds,
       images,
     } = req.body;
 
@@ -151,10 +160,32 @@ const createProduct = async (req, res, next) => {
       return res.status(400).json({ message: "name and price are required" });
     }
 
+    // Convert arrays to JSONB format, fallback to single ID if provided
+    const catIds =
+      categoryIds && categoryIds.length > 0
+        ? categoryIds
+        : categoryId
+          ? [categoryId]
+          : [];
+    const szIds =
+      sizeIds && sizeIds.length > 0 ? sizeIds : sizeId ? [sizeId] : [];
+    const kitIds =
+      kitchenIds && kitchenIds.length > 0
+        ? kitchenIds
+        : kitchenId
+          ? [kitchenId]
+          : [];
+    const cuisIds =
+      cuisineIds && cuisineIds.length > 0
+        ? cuisineIds
+        : cuisineId
+          ? [cuisineId]
+          : [];
+
     // Insert product
     const productResult = await query(
-      `INSERT INTO "Product" (id, name, description, price, "isFeatured", "isArchived", "categoryId", "sizeId", "kitchenId", "cuisineId", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      `INSERT INTO "Product" (id, name, description, price, "isFeatured", "isArchived", "categoryId", "sizeId", "kitchenId", "cuisineId", "categoryIds", "sizeIds", "kitchenIds", "cuisineIds", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
        RETURNING id`,
       [
         name,
@@ -162,10 +193,14 @@ const createProduct = async (req, res, next) => {
         parseFloat(price),
         !!isFeatured,
         !!isArchived,
-        categoryId || null,
-        sizeId || null,
-        kitchenId || null,
-        cuisineId || null,
+        catIds[0] || null,
+        szIds[0] || null,
+        kitIds[0] || null,
+        cuisIds[0] || null,
+        JSON.stringify(catIds),
+        JSON.stringify(szIds),
+        JSON.stringify(kitIds),
+        JSON.stringify(cuisIds),
       ],
     );
 
@@ -205,6 +240,10 @@ const updateProduct = async (req, res, next) => {
       sizeId,
       kitchenId,
       cuisineId,
+      categoryIds,
+      sizeIds,
+      kitchenIds,
+      cuisineIds,
       images,
     } = req.body;
 
@@ -241,19 +280,51 @@ const updateProduct = async (req, res, next) => {
       updates.push(`"isArchived" = $${paramIndex++}`);
       params.push(!!isArchived);
     }
-    if (categoryId !== undefined) {
+
+    // Handle category IDs
+    if (categoryIds !== undefined) {
+      const catIds = categoryIds && categoryIds.length > 0 ? categoryIds : [];
+      updates.push(`"categoryIds" = $${paramIndex++}`);
+      params.push(JSON.stringify(catIds));
+      updates.push(`"categoryId" = $${paramIndex++}`);
+      params.push(catIds[0] || null);
+    } else if (categoryId !== undefined) {
       updates.push(`"categoryId" = $${paramIndex++}`);
       params.push(categoryId || null);
     }
-    if (sizeId !== undefined) {
+
+    // Handle size IDs
+    if (sizeIds !== undefined) {
+      const szIds = sizeIds && sizeIds.length > 0 ? sizeIds : [];
+      updates.push(`"sizeIds" = $${paramIndex++}`);
+      params.push(JSON.stringify(szIds));
+      updates.push(`"sizeId" = $${paramIndex++}`);
+      params.push(szIds[0] || null);
+    } else if (sizeId !== undefined) {
       updates.push(`"sizeId" = $${paramIndex++}`);
       params.push(sizeId || null);
     }
-    if (kitchenId !== undefined) {
+
+    // Handle kitchen IDs
+    if (kitchenIds !== undefined) {
+      const kitIds = kitchenIds && kitchenIds.length > 0 ? kitchenIds : [];
+      updates.push(`"kitchenIds" = $${paramIndex++}`);
+      params.push(JSON.stringify(kitIds));
+      updates.push(`"kitchenId" = $${paramIndex++}`);
+      params.push(kitIds[0] || null);
+    } else if (kitchenId !== undefined) {
       updates.push(`"kitchenId" = $${paramIndex++}`);
       params.push(kitchenId || null);
     }
-    if (cuisineId !== undefined) {
+
+    // Handle cuisine IDs
+    if (cuisineIds !== undefined) {
+      const cuisIds = cuisineIds && cuisineIds.length > 0 ? cuisineIds : [];
+      updates.push(`"cuisineIds" = $${paramIndex++}`);
+      params.push(JSON.stringify(cuisIds));
+      updates.push(`"cuisineId" = $${paramIndex++}`);
+      params.push(cuisIds[0] || null);
+    } else if (cuisineId !== undefined) {
       updates.push(`"cuisineId" = $${paramIndex++}`);
       params.push(cuisineId || null);
     }

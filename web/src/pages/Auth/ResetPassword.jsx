@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
-import logo from "/assets/img/uncle-brew.png";
+import logo from "/assets/img/belapari-icon-text.png";
 import apiClient from "@/lib/api-client";
 
 const ResetPasswordPage = () => {
@@ -71,45 +71,34 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="flex flex-1 min-h-[calc(100vh-64px)]">
-      {/* Left decorative panel — hidden on mobile */}
-      <div className="hidden lg:flex w-1/2 bg-neutral-900 flex-col items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#ffffff15,transparent_60%)]" />
-        <img src={logo} alt="logo" className="w-40 mb-8" />
-        <h2 className="text-4xl font-bold text-white text-center leading-tight">
-          Create new password
-        </h2>
-        <p className="text-neutral-400 text-center mt-4 max-w-xs">
-          Enter a strong password to secure your Uncle Brew account.
-        </p>
-      </div>
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-white via-neutral-50 to-gray-100 flex items-center justify-center px-4 py-12">
+      {/* Background gradient blur */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#ff1493/08,transparent_60%)]" />
 
-      {/* Right form panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 bg-gray-50">
-        <div className="w-full max-w-md">
-          {/* Logo visible on mobile only */}
-          <div className="flex justify-center mb-8 lg:hidden">
-            <img src={logo} alt="logo" className="w-32" />
+      <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-8 items-center">
+        {/* Logo */}
+        <div className="hidden md:flex flex-col items-center justify-center">
+          <img src={logo} alt="logo" className="w-48" />
+        </div>
+
+        {/* Card */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 space-y-6 shadow-lg">
+          <div className="space-y-2 text-center">
+            <h1 className="text-3xl font-bold text-gray-900">Reset password</h1>
+            <p className="text-gray-600">Enter your new password below</p>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-1">
-            Reset password
-          </h1>
-          <p className="text-sm text-muted-foreground mb-8">
-            Enter your new password below
-          </p>
-
           {submitted ? (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-              <h2 className="font-semibold text-green-900 mb-2">Success!</h2>
-              <p className="text-sm text-green-700">
+            <div className="bg-gradient-to-r from-pink-50 to-fuchsia-50 border border-pink-200 rounded-lg p-4 text-center">
+              <h2 className="font-semibold text-pink-700 mb-2">Success!</h2>
+              <p className="text-sm text-gray-700">
                 Your password has been reset. Redirecting you now...
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-neutral-700">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
                   New password
                 </label>
                 <div className="relative">
@@ -120,20 +109,20 @@ const ResetPasswordPage = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min. 6 characters"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-700"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-neutral-700">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
                   Confirm password
                 </label>
                 <div className="relative">
@@ -144,12 +133,12 @@ const ResetPasswordPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Min. 6 characters"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-700"
                   >
                     {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -158,7 +147,7 @@ const ResetPasswordPage = () => {
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl bg-black text-white hover:bg-black/80 font-semibold text-sm"
+                className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
                 disabled={loading}
               >
                 {loading ? "Resetting password…" : "Reset password"}
@@ -166,6 +155,11 @@ const ResetPasswordPage = () => {
             </form>
           )}
         </div>
+
+        {/* Info text */}
+        <p className="text-center text-xs text-gray-600 mt-6 md:col-span-2">
+          Make sure your new password is unique and secure
+        </p>
       </div>
     </div>
   );

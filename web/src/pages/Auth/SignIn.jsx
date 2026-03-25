@@ -6,7 +6,7 @@ import useAuth from "@/hooks/use-auth";
 import useCart from "@/hooks/use-carts";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
-import logo from "/assets/img/uncle-brew.png";
+import logo from "/assets/img/belapari-icon-text.png";
 
 const SignInPage = () => {
   const [email, setEmail] = useState("");
@@ -23,7 +23,7 @@ const SignInPage = () => {
     try {
       await login(email, password);
       await fetchCart();
-      navigate("/");
+      navigate("/stores");
     } catch (err) {
       const data = err.response?.data;
       // Unverified account — send them to sign-up verify step
@@ -42,66 +42,53 @@ const SignInPage = () => {
     try {
       await loginWithGoogle(credentialResponse.credential);
       await fetchCart();
-      navigate("/");
+      navigate("/stores");
     } catch (err) {
       toast.error(err.response?.data?.message || "Google sign-in failed");
     }
   };
 
   return (
-    <div className="flex flex-1 min-h-[calc(100vh-64px)]">
-      {/* Left decorative panel — hidden on mobile */}
-      <div className="hidden lg:flex w-1/2 bg-neutral-900 flex-col items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#ffffff15,transparent_60%)]" />
-        <img src={logo} alt="logo" className="w-40 mb-8" />
-        <h2 className="text-4xl font-bold text-white text-center leading-tight">
-          Welcome back to
-          <br />
-          Uncle Brew
-        </h2>
-        <p className="text-neutral-400 text-center mt-4 max-w-xs">
-          Your favorite brews and bites are just a sign-in away.
-        </p>
-      </div>
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-white via-neutral-50 to-gray-100 flex items-center justify-center px-4 py-12">
+      {/* Background gradient blur */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ff1493/08,transparent_60%)]" />
 
-      {/* Right form panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 bg-gray-50">
-        <div className="w-full max-w-md">
-          {/* Logo visible on mobile only */}
-          <div className="flex justify-center mb-8 lg:hidden">
-            <img src={logo} alt="logo" className="w-32" />
+      <div className="relative w-full max-w-5xl grid md:grid-cols-2 gap-12 items-center">
+        {/* Logo */}
+        <div className="hidden md:flex flex-col items-center justify-center">
+          <img src={logo} alt="logo" className="w-50" />
+        </div>
+
+        {/* Card */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-10 space-y-6 shadow-lg">
+          <div className="space-y-2 text-center">
+            <h1 className="text-4xl font-bold text-gray-900">Sign in</h1>
+            <p className="text-gray-600">
+              Don&apos;t have an account?{" "}
+              <Link
+                to="/sign-up"
+                className="text-pink-600 font-semibold hover:text-fuchsia-700"
+              >
+                Sign up
+              </Link>
+            </p>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-1">
-            Sign in
-          </h1>
-          <p className="text-sm text-muted-foreground mb-8">
-            Don&apos;t have an account?{" "}
-            <Link
-              to="/sign-up"
-              className="text-black font-semibold hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
-
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">
-                Email
-              </label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -111,12 +98,12 @@ const SignInPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -126,7 +113,7 @@ const SignInPage = () => {
             <div className="flex justify-end">
               <Link
                 to="/forgot-password"
-                className="text-sm text-neutral-600 hover:text-black font-medium"
+                className="text-sm text-pink-600 font-medium hover:text-fuchsia-700"
               >
                 Forgot password?
               </Link>
@@ -134,17 +121,17 @@ const SignInPage = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 rounded-xl bg-black text-white hover:bg-black/80 font-semibold text-sm"
+              className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
               disabled={loading}
             >
               {loading ? "Signing in…" : "Sign In"}
             </Button>
           </form>
 
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-300" />
+            <span className="text-xs text-gray-500">or</span>
+            <div className="flex-1 h-px bg-gray-300" />
           </div>
 
           <div className="w-full">
@@ -152,11 +139,14 @@ const SignInPage = () => {
               onSuccess={handleGoogle}
               onError={() => toast.error("Google sign-in failed")}
               width="100%"
-              size="large"
-              text="signin_with"
             />
           </div>
         </div>
+
+        {/* Info text */}
+        <p className="text-center text-xs text-gray-600 mt-6 md:col-span-2">
+          By signing in, you agree to our Terms of Service and Privacy Policy
+        </p>
       </div>
     </div>
   );

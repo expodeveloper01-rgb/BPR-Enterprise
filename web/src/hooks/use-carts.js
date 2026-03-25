@@ -14,12 +14,18 @@ const useCart = create(
         try {
           const response = await apiClient.get("/cart");
           const items = response.data.items.map((item) => ({
-            id: item.productId,
+            id: `${item.productId}-${item.sizeId || "no-size"}`,
             cartId: item.id,
+            productId: item.productId,
+            sizeId: item.sizeId,
+            size: item.sizeName,
             name: item.name,
             price: item.price,
             qty: item.quantity,
             images: item.url ? [{ url: item.url }] : [],
+            category: item.category,
+            cuisine: item.cuisine,
+            kitchen: item.kitchen,
           }));
           set({ items, loaded: true });
         } catch (err) {
@@ -32,7 +38,9 @@ const useCart = create(
       addItem: async (data) => {
         try {
           const currentItems = get().items;
-          const existing = currentItems.find((item) => item.id === data.id);
+          const sizeId = data.sizeId || null;
+          const itemId = `${data.id}-${sizeId || "no-size"}`;
+          const existing = currentItems.find((item) => item.id === itemId);
 
           if (existing) {
             // Update quantity via API
@@ -41,7 +49,7 @@ const useCart = create(
             });
             set({
               items: currentItems.map((item) =>
-                item.id === data.id
+                item.id === itemId
                   ? { ...item, qty: item.qty + (data.qty || 1) }
                   : item,
               ),
@@ -51,18 +59,25 @@ const useCart = create(
             // Add new item via API
             const response = await apiClient.post("/cart", {
               productId: data.id,
+              sizeId: sizeId,
               quantity: data.qty || 1,
             });
             set({
               items: [
                 ...currentItems,
                 {
-                  id: data.id,
+                  id: itemId,
                   cartId: response.data.item.id,
+                  productId: data.id,
+                  sizeId: sizeId,
+                  size: data.sizeName,
                   name: data.name,
                   price: data.price,
                   qty: data.qty || 1,
                   images: data.images || [],
+                  category: data.category,
+                  cuisine: data.cuisine,
+                  kitchen: data.kitchen,
                 },
               ],
             });

@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 import useAuth from "@/hooks/use-auth";
 import useCart from "@/hooks/use-carts";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
-import logo from "/assets/img/uncle-brew.png";
+import { Eye, EyeOff, Mail } from "lucide-react";
+import logo from "/assets/img/belapari-icon-text.png";
 
 // ── OTP input: 6 boxes ───────────────────────────────────────────────────────
 const OtpInput = ({ value, onChange }) => {
@@ -49,7 +49,7 @@ const OtpInput = ({ value, onChange }) => {
           onChange={() => {}}
           onKeyDown={(e) => handleKey(e, i)}
           onPaste={handlePaste}
-          className="w-12 h-14 text-center text-xl font-bold border-2 rounded-xl bg-white focus:outline-none focus:border-black transition"
+          className="w-12 h-14 text-center text-xl font-bold border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:border-pink-500 transition"
         />
       ))}
     </div>
@@ -112,8 +112,8 @@ const SignUpPage = () => {
     try {
       await verifyEmail(pendingEmail, code);
       await fetchCart();
-      toast.success("Email verified! Welcome to Uncle Brew 🎉");
-      navigate("/");
+      toast.success("Email verified! Welcome to BeLaPaRi Ventures 🎉");
+      navigate("/stores");
     } catch (err) {
       toast.error(err.response?.data?.message || "Invalid or expired code");
     } finally {
@@ -138,7 +138,7 @@ const SignUpPage = () => {
     try {
       await loginWithGoogle(credentialResponse.credential);
       await fetchCart();
-      navigate("/");
+      navigate("/stores");
     } catch (err) {
       toast.error(err.response?.data?.message || "Google sign-up failed");
     }
@@ -146,86 +146,72 @@ const SignUpPage = () => {
 
   const leftPanel = (
     <div className="hidden lg:flex w-1/2 bg-neutral-900 flex-col items-center justify-center p-12 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ffffff15,transparent_60%)]" />
-      <img src={logo} alt="logo" className="w-40 mb-8" />
-      <h2 className="text-4xl font-bold text-white text-center leading-tight">
-        Join Uncle Brew
-        <br />
-        today
-      </h2>
-      <p className="text-neutral-400 text-center mt-4 max-w-xs">
-        Create your account and start ordering your favorite brews and bites.
-      </p>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ffffff08,transparent_60%)]" />
     </div>
   );
 
   // ── Verify step ──────────────────────────────────────────────────────────────
   if (step === "verify") {
     return (
-      <div className="flex flex-1 min-h-[calc(100vh-64px)]">
-        {leftPanel}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 bg-gray-50">
-          <div className="w-full max-w-md text-center">
-            <div className="flex justify-center mb-8 lg:hidden">
-              <img src={logo} alt="logo" className="w-32" />
+      <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-white via-neutral-50 to-gray-100 flex items-center justify-center px-4 py-12">
+        {/* Background gradient blur */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ff1493/08,transparent_60%)]" />
+
+        <div className="relative w-full max-w-md">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <img src={logo} alt="logo" className="w-40" />
+          </div>
+
+          {/* Card */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 space-y-6 shadow-lg text-center">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-7 h-7 text-white" />
             </div>
-            <div className="w-14 h-14 rounded-full bg-black flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-7 h-7 text-white"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
+
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-gray-900">
+                Check your inbox
+              </h1>
+              <p className="text-gray-600">
+                We sent a 6-digit code to{" "}
+                <span className="font-semibold text-pink-600">
+                  {pendingEmail}
+                </span>
+              </p>
             </div>
-            <h1 className="text-2xl font-bold text-neutral-800 mb-2">
-              Check your inbox
-            </h1>
-            <p className="text-sm text-muted-foreground mb-8">
-              We sent a 6-digit code to{" "}
-              <span className="font-semibold text-neutral-700">
-                {pendingEmail}
-              </span>
-            </p>
 
             <form onSubmit={handleVerify} className="space-y-6">
               <OtpInput value={code} onChange={setCode} />
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl bg-black text-white hover:bg-black/80 font-semibold text-sm"
+                className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
                 disabled={loading || code.length < 6}
               >
                 {loading ? "Verifying…" : "Verify Email"}
               </Button>
             </form>
 
-            <p className="text-sm text-muted-foreground mt-6">
-              Didn't receive it?{" "}
+            <div className="space-y-2">
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={resending}
-                className="text-black font-semibold hover:underline disabled:opacity-50"
+                className="w-full text-sm text-pink-600 font-medium hover:text-fuchsia-700 disabled:opacity-50"
               >
-                {resending ? "Sending…" : "Resend code"}
+                {resending ? "Sending…" : "Didn't receive it? Resend code"}
               </button>
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setStep("form");
-                setCode("");
-              }}
-              className="mt-3 text-xs text-muted-foreground hover:underline"
-            >
-              ← Back to sign up
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("form");
+                  setCode("");
+                }}
+                className="w-full text-xs text-neutral-500 hover:text-neutral-400"
+              >
+                ← Back to sign up
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -234,30 +220,34 @@ const SignUpPage = () => {
 
   // ── Registration form ────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-1 min-h-[calc(100vh-64px)]">
-      {leftPanel}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 bg-gray-50">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-8 lg:hidden">
-            <img src={logo} alt="logo" className="w-32" />
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-white via-neutral-50 to-gray-100 flex items-center justify-center px-4 py-12">
+      {/* Background gradient blur */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ff1493/08,transparent_60%)]" />
+
+      <div className="relative w-full max-w-5xl grid md:grid-cols-2 gap-12 items-center">
+        {/* Logo */}
+        <div className="hidden md:flex flex-col items-center justify-center">
+          <img src={logo} alt="logo" className="w-50" />
+        </div>
+
+        {/* Card */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-10 space-y-6 shadow-lg">
+          <div className="space-y-2 text-center">
+            <h1 className="text-4xl font-bold text-gray-900">Create account</h1>
+            <p className="text-gray-600">
+              Already have an account?{" "}
+              <Link
+                to="/sign-in"
+                className="text-pink-600 font-semibold hover:text-fuchsia-700"
+              >
+                Sign in
+              </Link>
+            </p>
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-1">
-            Create account
-          </h1>
-          <p className="text-sm text-muted-foreground mb-8">
-            Already have an account?{" "}
-            <Link
-              to="/sign-in"
-              className="text-black font-semibold hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
                 Full Name
               </label>
               <input
@@ -266,26 +256,24 @@ const SignUpPage = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">
-                Email
-              </label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-neutral-700">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -296,12 +284,12 @@ const SignUpPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min. 6 characters"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black/20 transition"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -310,17 +298,17 @@ const SignUpPage = () => {
 
             <Button
               type="submit"
-              className="w-full h-11 rounded-xl bg-black text-white hover:bg-black/80 font-semibold text-sm"
+              className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
               disabled={loading}
             >
               {loading ? "Sending code…" : "Continue"}
             </Button>
           </form>
 
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-300" />
+            <span className="text-xs text-gray-500">or</span>
+            <div className="flex-1 h-px bg-gray-300" />
           </div>
 
           <div className="w-full">
@@ -328,11 +316,14 @@ const SignUpPage = () => {
               onSuccess={handleGoogle}
               onError={() => toast.error("Google sign-up failed")}
               width="100%"
-              size="large"
-              text="signup_with"
             />
           </div>
         </div>
+
+        {/* Info text */}
+        <p className="text-center text-xs text-gray-600 mt-6 md:col-span-2">
+          By signing up, you agree to our Terms of Service and Privacy Policy
+        </p>
       </div>
     </div>
   );
