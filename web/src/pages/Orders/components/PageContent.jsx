@@ -1,9 +1,18 @@
 import { PackageOpen } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import OrderItem from "./OrderItem";
 
-const PageContent = ({ orders }) => {
+const PageContent = ({ orders, onViewDetail }) => {
+  const { pathname } = useLocation();
+  const isUncleBrew = pathname.startsWith("/uncle-brew");
+  const isDiomedes = pathname.startsWith("/diomedes");
+  const store = isUncleBrew
+    ? "uncle-brew"
+    : isDiomedes
+      ? "diomedes"
+      : "uncle-brew";
+
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -14,7 +23,7 @@ const PageContent = ({ orders }) => {
         <p className="text-sm text-muted-foreground">
           Your completed orders will appear here.
         </p>
-        <Link to="/menu">
+        <Link to={`/${store}/menu`}>
           <Button className="rounded-full px-6 bg-black text-white hover:bg-black/80">
             Start Brewing Your Coffee
           </Button>
@@ -26,7 +35,7 @@ const PageContent = ({ orders }) => {
   return (
     <div className="space-y-3">
       {orders.map((order) => (
-        <OrderItem key={order.id} order={order} />
+        <OrderItem key={order.id} order={order} onViewDetail={onViewDetail} />
       ))}
     </div>
   );

@@ -9,7 +9,7 @@ const pool = new Pool({
 
 async function createAdminUser() {
   const adminName = "Admin";
-  const adminEmail = "admin@unclebrew.com";
+  const adminEmail = "admin@belapari.com";
   const adminPassword = "Admin1234";
 
   try {

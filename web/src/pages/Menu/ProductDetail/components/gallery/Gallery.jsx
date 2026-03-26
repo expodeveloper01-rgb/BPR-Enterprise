@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GalleryContent from "./GalleryContent";
 import GalleryTab from "./GalleryTab";
 
 const Gallery = ({ images }) => {
   const [selected, setSelected] = useState(images?.[0]?.url ?? "");
+
+  useEffect(() => {
+    if (images && images.length > 0) {
+      setSelected(images[0].url);
+    }
+  }, [images]);
 
   if (!images || images.length === 0) return null;
 

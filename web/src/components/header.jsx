@@ -21,6 +21,11 @@ const BRANDS = {
     name: "Uncle Brew",
     logo: "/assets/img/uncle-brew.png",
   },
+  diomedes: {
+    id: "diomedes",
+    name: "Diomedes Bakeshop",
+    logo: "/assets/img/diomedes-logo.png",
+  },
 };
 
 const Header = () => {
@@ -37,11 +42,14 @@ const Header = () => {
   const isHome = pathname === "/";
   const transparent = isHome && !scrolled;
   const isUncleBrew = pathname.startsWith("/uncle-brew");
+  const isDiomedes = pathname.startsWith("/diomedes");
 
   // Determine brand directly from pathname
   const currentBrand = pathname.startsWith("/uncle-brew")
     ? BRANDS["uncle-brew"]
-    : BRANDS.belapari;
+    : pathname.startsWith("/diomedes")
+      ? BRANDS["diomedes"]
+      : BRANDS.belapari;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -68,7 +76,20 @@ const Header = () => {
   };
 
   // Determine logo link based on current brand
-  const logoLink = currentBrand.id === "belapari" ? "/" : "/uncle-brew";
+  const logoLink =
+    currentBrand.id === "belapari"
+      ? "/"
+      : currentBrand.id === "uncle-brew"
+        ? "/uncle-brew"
+        : "/diomedes";
+
+  // Determine orders link based on current brand
+  const ordersLink =
+    currentBrand.id === "uncle-brew"
+      ? "/uncle-brew/orders"
+      : currentBrand.id === "diomedes"
+        ? "/diomedes/orders"
+        : "/uncle-brew/orders"; // Default to uncle-brew orders for belapari
 
   return (
     <header
@@ -82,7 +103,7 @@ const Header = () => {
       )}
     >
       <Container>
-        <div className="relative px-4 sm:px-6 lg:px-12 flex h-16 items-center">
+        <div className="relative px-4 md:px-12 flex h-16 items-center justify-between">
           <Link
             to={logoLink}
             className="flex items-center shrink-0"
@@ -92,16 +113,16 @@ const Header = () => {
               key={currentBrand.id}
               src={currentBrand.logo}
               alt={currentBrand.name}
-              className="w-14 md:w-18"
+              className="w-16 md:w-20"
             />
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:block">
+          {/* Desktop nav - centered */}
+          <div className="hidden md:flex flex-1 items-center justify-center">
             <MainNav scrolled={!transparent} />
           </div>
 
-          <div className="ml-auto flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <CartActionButton scrolled={scrolled} />
             {isSignedIn ? (
               <>
@@ -134,7 +155,7 @@ const Header = () => {
                         </Link>
                       )}
                       <Link
-                        to="/uncle-brew/orders"
+                        to={ordersLink}
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-gray-50 transition-colors"
                       >
@@ -159,6 +180,18 @@ const Header = () => {
                     </div>
                   )}
                 </div>
+                {/* Mobile hamburger for authenticated users */}
+                <button
+                  className="md:hidden p-2 rounded-lg transition-colors"
+                  onClick={() => setMobileOpen((o) => !o)}
+                  aria-label="Toggle menu"
+                >
+                  {mobileOpen ? (
+                    <X className="w-6 h-6 text-neutral-800" />
+                  ) : (
+                    <Menu className="w-6 h-6 text-neutral-800" />
+                  )}
+                </button>
               </>
             ) : (
               <div className="flex items-center gap-2">
@@ -214,12 +247,20 @@ const Header = () => {
                   { to: "/uncle-brew/about", label: "About" },
                   { to: "/uncle-brew/contact", label: "Contact" },
                 ]
-              : [
-                  { to: "/", label: "Home" },
-                  { to: "/browse-stores", label: "Browse Stores" },
-                  { to: "/about", label: "About" },
-                  { to: "/contact", label: "Contact" },
-                ]
+              : isDiomedes
+                ? [
+                    { to: "/diomedes", label: "Home" },
+                    { to: "/diomedes/menu", label: "Menu" },
+                    { to: "/diomedes/orders", label: "Orders" },
+                    { to: "/diomedes/about", label: "About" },
+                    { to: "/diomedes/contact", label: "Contact" },
+                  ]
+                : [
+                    { to: "/", label: "Home" },
+                    { to: "/stores", label: "Browse Stores" },
+                    { to: "/about", label: "About" },
+                    { to: "/contact", label: "Contact" },
+                  ]
             )
               .concat(
                 user?.role === "admin"
@@ -236,26 +277,39 @@ const Header = () => {
                   {label}
                 </Link>
               ))}
-            <div className="flex gap-3 pt-4">
-              <Link
-                to="/sign-in"
-                onClick={() => setMobileOpen(false)}
-                className="flex-1"
+            {!isSignedIn && (
+              <div className="flex gap-3 pt-4">
+                <Link
+                  to="/sign-in"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1"
+                >
+                  <Button variant="outline" className="w-full rounded-full">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link
+                  to="/sign-up"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1"
+                >
+                  <Button className="w-full rounded-full bg-black text-white">
+                    Sign up
+                  </Button>
+                </Link>
+              </div>
+            )}
+            {isSignedIn && (
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setMobileOpen(false);
+                }}
+                className="w-full mt-4 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100 pt-4"
               >
-                <Button variant="outline" className="w-full rounded-full">
-                  Sign in
-                </Button>
-              </Link>
-              <Link
-                to="/sign-up"
-                onClick={() => setMobileOpen(false)}
-                className="flex-1"
-              >
-                <Button className="w-full rounded-full bg-black text-white">
-                  Sign up
-                </Button>
-              </Link>
-            </div>
+                Sign out
+              </button>
+            )}
           </nav>
         </div>
       )}

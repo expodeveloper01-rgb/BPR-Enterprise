@@ -23,6 +23,10 @@ const {
 // GET /api/v1/admin/stats
 router.get("/stats", protect, requireAdmin, async (req, res, next) => {
   try {
+    const { kitchen } = req.query;
+    const kitchenFilter = kitchen ? `WHERE "kitchenId" = $1` : "";
+    const params = kitchen ? [kitchen] : [];
+
     const [
       totalProductsRes,
       featuredProductsRes,
@@ -30,28 +34,52 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
       totalOrdersRes,
       recentOrdersRes,
     ] = await Promise.all([
-      query('SELECT COUNT(*) as count FROM "Product"', []),
+      query(`SELECT COUNT(*) as count FROM "Product" ${kitchenFilter}`, params),
       query(
-        'SELECT COUNT(*) as count FROM "Product" WHERE "isFeatured" = true',
-        [],
+        `SELECT COUNT(*) as count FROM "Product" ${kitchenFilter ? kitchenFilter + " AND" : "WHERE"} "isFeatured" = true`,
+        params,
       ),
       query(
-        'SELECT COUNT(*) as count FROM "Product" WHERE "isArchived" = true',
-        [],
+        `SELECT COUNT(*) as count FROM "Product" ${kitchenFilter ? kitchenFilter + " AND" : "WHERE"} "isArchived" = true`,
+        params,
       ),
-      query('SELECT COUNT(*) as count FROM "Order"', []),
-      query(
-        `
-          SELECT o.id, o."userId", o."isPaid", o.phone, o.address, o."order_status", o."createdAt",
-            p.id AS p_id, p.name AS p_name, p.price AS p_price
-          FROM "Order" o
-          LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
-          LEFT JOIN "Product" p ON oi."productId" = p.id
-          ORDER BY o."createdAt" DESC
-          LIMIT 50
-        `,
-        [],
-      ),
+      // Total orders (still global or filtered by kitchen products?)
+      kitchen
+        ? query(
+            `SELECT COUNT(DISTINCT o.id) as count FROM "Order" o
+             JOIN "OrderItem" oi ON oi."orderId" = o.id
+             JOIN "Product" p ON oi."productId" = p.id
+             WHERE p."kitchenId" = $1`,
+            params,
+          )
+        : query('SELECT COUNT(*) as count FROM "Order"', []),
+      // Recent orders with products
+      kitchen
+        ? query(
+            `
+              SELECT DISTINCT o.id, o."userId", o."isPaid", o.phone, o.address, o."order_status", o."createdAt",
+                p.id AS p_id, p.name AS p_name, p.price AS p_price
+              FROM "Order" o
+              LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
+              LEFT JOIN "Product" p ON oi."productId" = p.id
+              WHERE p."kitchenId" = $1
+              ORDER BY o."createdAt" DESC
+              LIMIT 50
+            `,
+            params,
+          )
+        : query(
+            `
+              SELECT o.id, o."userId", o."isPaid", o.phone, o.address, o."order_status", o."createdAt",
+                p.id AS p_id, p.name AS p_name, p.price AS p_price
+              FROM "Order" o
+              LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
+              LEFT JOIN "Product" p ON oi."productId" = p.id
+              ORDER BY o."createdAt" DESC
+              LIMIT 50
+            `,
+            [],
+          ),
     ]);
 
     const totalProducts = parseInt(totalProductsRes.rows[0].count);
@@ -100,18 +128,32 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
 // GET /api/v1/admin/orders — all orders with items
 router.get("/orders", protect, requireAdmin, async (req, res, next) => {
   try {
+    const { kitchen } = req.query;
+    const kitchenFilter = kitchen ? `WHERE p."kitchenId" = $1` : "";
+    const params = kitchen ? [kitchen] : [];
+
     const result = await query(
       `
-      SELECT o.id, o."userId", o."isPaid", o.phone, o.address, o."order_status", o."createdAt",
+      SELECT DISTINCT o.id, o."userId", o."isPaid", o.phone, o.address, 
+        o."paymentMethod", o."referenceNumber", o."order_status", o."statusMessage", o."statusHistory",
+        o."createdAt", o."updatedAt",
         u.id AS u_id, u.name AS u_name, u.email AS u_email,
-        p.id AS p_id, p.name AS p_name, p.price AS p_price
+        oi.id AS oi_id, oi.quantity, oi."productId", oi."sizeId",
+        p.id AS p_id, p.name AS p_name, p.price AS p_price,
+        s.id AS s_id, s.name AS s_name,
+        img.id AS img_id, img.url AS img_url
       FROM "Order" o
       LEFT JOIN "User" u ON o."userId" = u.id
       LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
       LEFT JOIN "Product" p ON oi."productId" = p.id
+      LEFT JOIN "Size" s ON oi."sizeId" = s.id
+      LEFT JOIN "Image" img ON img."productId" = p.id AND img."createdAt" = (
+        SELECT MIN("createdAt") FROM "Image" WHERE "productId" = p.id
+      )
+      ${kitchenFilter}
       ORDER BY o."createdAt" DESC
     `,
-      [],
+      params,
     );
 
     const ordersMap = new Map();
@@ -121,26 +163,61 @@ router.get("/orders", protect, requireAdmin, async (req, res, next) => {
           id: row.id,
           userId: row.userId,
           isPaid: row.isPaid,
+          order_status: row.order_status,
+          statusMessage: row.statusMessage || "",
+          statusHistory: row.statusHistory || [],
           phone: row.phone,
           address: row.address,
-          order_status: row.order_status,
+          paymentMethod: row.paymentMethod,
+          referenceNumber: row.referenceNumber,
           createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          recipientName: row.u_name || "Guest",
+          recipientPhone: row.phone,
+          city: "",
+          province: "",
+          zipCode: "",
+          shippingFee: 0,
           user: row.u_id
             ? { id: row.u_id, name: row.u_name, email: row.u_email }
             : null,
-          orderItems: [],
+          itemsMap: new Map(),
         });
       }
-      if (row.p_id) {
-        ordersMap.get(row.id).orderItems.push({
-          productId: row.p_id,
-          name: row.p_name,
-          price: row.p_price,
-        });
+      if (row.oi_id) {
+        const order = ordersMap.get(row.id);
+        if (!order.itemsMap.has(row.oi_id)) {
+          order.itemsMap.set(row.oi_id, {
+            id: row.oi_id,
+            quantity: row.quantity,
+            product: row.p_id
+              ? {
+                  id: row.p_id,
+                  name: row.p_name,
+                  price: row.p_price,
+                }
+              : null,
+            size: row.s_id ? { id: row.s_id, name: row.s_name } : null,
+            images: [],
+          });
+        }
+        if (row.img_id && row.oi_id) {
+          const item = order.itemsMap.get(row.oi_id);
+          if (!item.images.find((img) => img.id === row.img_id)) {
+            item.images.push({
+              id: row.img_id,
+              url: row.img_url,
+            });
+          }
+        }
       }
     }
 
-    const orders = Array.from(ordersMap.values());
+    const orders = Array.from(ordersMap.values()).map((o) => ({
+      ...o,
+      orderItems: Array.from(o.itemsMap.values()),
+      itemsMap: undefined,
+    }));
     res.json(orders);
   } catch (err) {
     next(err);

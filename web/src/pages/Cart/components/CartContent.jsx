@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { CardSkeletons } from "@/components/ui/skeleton";
 import useCart from "@/hooks/use-carts";
 import { ArrowRight, ShoppingBag, Trash2 } from "lucide-react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
@@ -7,7 +8,7 @@ import toast from "react-hot-toast";
 import CartItem from "./CartItem";
 import { Separator } from "@/components/ui/separator";
 
-const CartContent = () => {
+const CartContent = ({ store = "uncle-brew" }) => {
   const cart = useCart();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -29,8 +30,40 @@ const CartContent = () => {
   }, [searchParams]);
 
   const onCheckOut = () => {
-    navigate("/checkout");
+    navigate(`/${store}/checkout`);
   };
+
+  // Show loading skeleton while cart is loading
+  if (!cart.loaded) {
+    return (
+      <div className="w-full">
+        <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-6">
+          Cart
+          <span className="ml-2 text-base font-normal text-muted-foreground">
+            (loading...)
+          </span>
+        </h1>
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex-1 w-full">
+            <CardSkeletons count={3} />
+          </div>
+          <div className="w-full lg:w-80 shrink-0">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+              <div className="h-6 bg-gray-200 rounded animate-pulse w-24" />
+              <Separator />
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <Separator />
+              <div className="h-6 bg-gray-200 rounded animate-pulse" />
+              <div className="h-11 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (cart.items.length === 0) {
     return (
@@ -38,9 +71,13 @@ const CartContent = () => {
         <div className="w-20 h-20 rounded-full bg-neutral-100 flex items-center justify-center">
           <ShoppingBag className="w-9 h-9 text-neutral-400" />
         </div>
-        <h2 className="text-2xl font-semibold text-neutral-700">Your cart is empty</h2>
-        <p className="text-muted-foreground text-sm">Browse our menu and add items to get started.</p>
-        <Link to="/menu">
+        <h2 className="text-2xl font-semibold text-neutral-700">
+          Your cart is empty
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Browse our menu and add items to get started.
+        </p>
+        <Link to={`/${store}/menu`}>
           <Button className="rounded-full px-6 bg-black text-white hover:bg-black/80">
             Browse Menu
           </Button>
@@ -79,7 +116,9 @@ const CartContent = () => {
         {/* Order summary sidebar */}
         <div className="w-full lg:w-80 shrink-0 sticky top-24">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-neutral-800">Order Summary</h2>
+            <h2 className="text-lg font-semibold text-neutral-800">
+              Order Summary
+            </h2>
             <Separator />
 
             <div className="space-y-2 text-sm">

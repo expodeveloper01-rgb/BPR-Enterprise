@@ -18,7 +18,7 @@ const CuisineFilters = ({ cuisines }) => {
     }
 
     const href = qs.stringifyUrl({
-      url: "/menu",
+      url: "/uncle-brew/menu",
       query: currentParams,
     });
 

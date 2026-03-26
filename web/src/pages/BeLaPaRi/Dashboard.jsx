@@ -2,9 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import useAuth from "@/hooks/use-auth";
 import { useStore } from "@/context/StoreContext";
-import belaLogo from "/assets/img/belapari-icon.png";
 import uncleLogo from "/assets/img/uncle-brew.png";
-import { LogOut, ArrowRight } from "lucide-react";
+import diomedesLogo from "/assets/img/diomedes-logo.png";
+import { ArrowRight } from "lucide-react";
 
 const stores = [
   {
@@ -17,13 +17,13 @@ const stores = [
     features: ["Specialty Coffee", "Fresh Pastries", "Gourmet Sandwiches"],
   },
   {
-    id: "coming-soon-1",
-    name: "Coming Soon",
-    description: "New venture launching soon",
-    logo: null,
-    category: "TBA",
-    status: "coming-soon",
-    features: [],
+    id: "diomedes",
+    name: "Diomedes Bakeshop",
+    description: "Artisanal Bakery & Café",
+    logo: diomedesLogo,
+    category: "Bakery",
+    status: "active",
+    features: ["Sourdough Bread", "Fresh Pastries", "Premium Coffee"],
   },
   {
     id: "coming-soon-2",
@@ -62,30 +62,8 @@ const StoresDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100">
-      {/* Header */}
-      <header className="border-b border-gray-300 bg-white/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <img src={belaLogo} alt="BeLaPaRi Ventures" className="h-12" />
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-gray-700">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 flex items-center justify-center text-xs font-semibold text-white">
-                {user?.name?.[0]?.toUpperCase()}
-              </div>
-              <span className="text-sm">{user?.email}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-600 hover:text-gray-900"
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="space-y-12">
           {/* Welcome Section */}
           <div className="space-y-4">
@@ -118,7 +96,7 @@ const StoresDashboard = () => {
                     <img
                       src={store.logo}
                       alt={store.name}
-                      className="h-24 object-contain"
+                      className="h-30 object-contain"
                     />
                   ) : (
                     <div className="w-20 h-20 bg-gray-300 rounded-xl flex items-center justify-center text-2xl text-gray-500">

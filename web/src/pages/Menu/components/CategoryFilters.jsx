@@ -1,12 +1,15 @@
 import Box from "@/components/box";
 import { cn } from "@/lib/utils";
 import { CheckSquare } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import qs from "query-string";
 
 const CategoryFilters = ({ categories }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isDiomedes = pathname.startsWith("/diomedes");
+  const store = isDiomedes ? "diomedes" : "uncle-brew";
 
   const handleClick = (category) => {
     const currentParams = Object.fromEntries(searchParams.entries());
@@ -18,7 +21,7 @@ const CategoryFilters = ({ categories }) => {
     }
 
     const href = qs.stringifyUrl({
-      url: "/menu",
+      url: `/${store}/menu`,
       query: currentParams,
     });
 

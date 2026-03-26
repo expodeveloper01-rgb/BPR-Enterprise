@@ -11,6 +11,11 @@ const BRANDS = {
     name: "Uncle Brew",
     logo: "/assets/img/uncle-brew.png",
   },
+  diomedes: {
+    id: "diomedes",
+    name: "Diomedes Bakeshop",
+    logo: "/assets/img/diomedes-logo.png",
+  },
 };
 
 const AuthHeader = () => {
@@ -19,7 +24,9 @@ const AuthHeader = () => {
   // Determine brand directly from pathname
   const currentBrand = pathname.startsWith("/uncle-brew")
     ? BRANDS["uncle-brew"]
-    : BRANDS.belapari;
+    : pathname.startsWith("/diomedes")
+      ? BRANDS["diomedes"]
+      : BRANDS.belapari;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-300 backdrop-blur-md">
@@ -28,7 +35,7 @@ const AuthHeader = () => {
           <img
             src={currentBrand.logo}
             alt={currentBrand.name}
-            className="h-12 w-12"
+            className="h-14 w-14"
           />
         </Link>
         <div className="text-sm text-gray-600">

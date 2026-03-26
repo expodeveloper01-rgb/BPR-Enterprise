@@ -27,13 +27,13 @@ import feature3 from "/assets/img/feature-mobile3.png";
 
 const HomepageContent = ({ products, newProducts }) => {
   return (
-    <div className="relative overflow-x-hidden -mt-16">
+    <div className="relative overflow-x-hidden">
       <img
         src="/assets/img/bg1.svg"
         alt=""
         className="hidden md:block absolute -z-10 top-0 right-0 w-[72%] h-screen pointer-events-none object-cover object-left"
       />
-      <Container className="px-4 md:px-12 pt-16">
+      <Container className="px-4 md:px-12 pt-8">
         {newProducts?.slice(0, 1).map((item) => (
           <AdPopup key={item.id} data={item} />
         ))}
@@ -60,12 +60,12 @@ const HomepageContent = ({ products, newProducts }) => {
                 Bold espressos, creamy lattes &amp; more — everything at ₱39!
               </p>
               <div className="flex gap-3 mt-1">
-                <Link to="/menu">
+                <Link to="/uncle-brew/menu">
                   <Button className="px-7 py-5 rounded-full bg-white text-black font-bold hover:bg-white/90 text-sm">
                     Order Now
                   </Button>
                 </Link>
-                <Link to="/menu">
+                <Link to="/uncle-brew/menu">
                   <Button
                     variant="outline"
                     className="px-7 py-5 rounded-full border-white/30 text-white bg-transparent hover:bg-white/10 text-sm"
@@ -94,7 +94,7 @@ const HomepageContent = ({ products, newProducts }) => {
                 cup is just a pour away!
               </p>
               <div className="my-4 flex gap-6">
-                <Link to="/menu">
+                <Link to="/uncle-brew/menu">
                   <Button className="px-16 py-6 rounded-full bg-hero hover:bg-black/80">
                     Order Now
                   </Button>
@@ -119,7 +119,7 @@ const HomepageContent = ({ products, newProducts }) => {
 
         {/* Popular */}
         {products && products.length > 0 && (
-          <section className="flex flex-col gap-12 py-24">
+          <section className="flex flex-col gap-12 py-16">
             <div className="flex flex-col items-center justify-center gap-4">
               <img src={logo} alt="logo" className="w-48" />
               <h2 className="text-5xl font-bold">Popular Menu</h2>
@@ -130,7 +130,7 @@ const HomepageContent = ({ products, newProducts }) => {
                 corporis id!
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 my-4 py-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 my-4">
               {products?.slice(0, 4).map((item) => (
                 <PopularContent key={item.id} data={item} />
               ))}
@@ -139,7 +139,7 @@ const HomepageContent = ({ products, newProducts }) => {
         )}
 
         {/* Why Us */}
-        <section className="py-24 flex flex-col items-center justify-center">
+        <section className="py-8 flex flex-col items-center justify-center">
           <h2 className="text-5xl md:text-5xl font-bold tracking-wider uppercase text-black my-4">
             Why Uncle Brew?
           </h2>
@@ -181,7 +181,7 @@ const HomepageContent = ({ products, newProducts }) => {
         </section>
 
         {/* How It Works */}
-        <section className="py-24 flex flex-col items-center justify-center">
+        <section className="py-8 flex flex-col items-center justify-center">
           <h2 className="text-4xl md:text-4xl font-bold tracking-wider flex flex-col items-center text-black my-4">
             Effortless Ordering:{" "}
             <span className="text-neutral-500">A Quick Overview</span>

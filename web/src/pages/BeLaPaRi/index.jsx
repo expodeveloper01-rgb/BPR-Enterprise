@@ -15,7 +15,7 @@ const BeLaPaRiHome = () => {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100">
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-24 text-center">
         <div className="space-y-8">

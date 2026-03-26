@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import SellerLayout from "../SellerLayout";
+import { useSeller } from "@/context/SellerContext";
 import apiClient from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import getCategories from "@/actions/get-categories";
@@ -30,6 +31,7 @@ const ProductForm = () => {
   const { productId } = useParams();
   const isEdit = !!productId;
   const navigate = useNavigate();
+  const { selectedKitchenId } = useSeller();
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [lookups, setLookups] = useState({
@@ -50,32 +52,51 @@ const ProductForm = () => {
       getSizes(),
       getKitchens(),
       getCuisines(),
-    ]).then(([categories, sizes, kitchens, cuisines]) =>
-      setLookups({ categories, sizes, kitchens, cuisines }),
-    );
+    ]).then(([categories, sizes, kitchens, cuisines]) => {
+      setLookups({ categories, sizes, kitchens, cuisines });
+
+      // Auto-select current kitchen for new products
+      if (!isEdit && selectedKitchenId) {
+        setForm((prev) => ({
+          ...prev,
+          kitchenIds: [selectedKitchenId],
+        }));
+      }
+    });
 
     if (isEdit) {
       apiClient
         .get(`/products/${productId}`)
         .then((r) => {
           const p = r.data;
-          setForm({
+          // Helper to ensure array values
+          const ensureArray = (val, fallbackId) => {
+            if (Array.isArray(val) && val.length > 0) return val;
+            if (fallbackId) return [fallbackId];
+            return [];
+          };
+
+          const formData = {
             name: p.name,
             description: p.description ?? "",
             price: p.price,
-            categoryIds: p.categoryIds ?? (p.categoryId ? [p.categoryId] : []),
-            sizeIds: p.sizeIds ?? (p.sizeId ? [p.sizeId] : []),
-            kitchenIds: p.kitchenIds ?? (p.kitchenId ? [p.kitchenId] : []),
-            cuisineIds: p.cuisineIds ?? (p.cuisineId ? [p.cuisineId] : []),
+            categoryIds: ensureArray(p.categoryIds, p.categoryId),
+            sizeIds: ensureArray(p.sizeIds, p.sizeId),
+            kitchenIds: ensureArray(p.kitchenIds, p.kitchenId),
+            cuisineIds: ensureArray(p.cuisineIds, p.cuisineId),
             isFeatured: p.isFeatured,
             isArchived: p.isArchived,
             images: p.images?.length ? p.images.map((i) => i.url) : [""],
-          });
+          };
+
+          setForm(formData);
         })
         .catch(() => toast.error("Failed to load product"))
         .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-  }, [productId, isEdit]);
+  }, [productId, isEdit, selectedKitchenId]);
 
   const handleField = (e) => {
     const { name, value, type, checked } = e.target;
@@ -85,8 +106,12 @@ const ProductForm = () => {
   const toggleMultiSelect = (fieldName, id) => {
     setForm((f) => {
       const current = f[fieldName] || [];
-      if (current.includes(id)) {
-        return { ...f, [fieldName]: current.filter((v) => v !== id) };
+      const idStr = String(id); // Ensure ID is a string for consistency
+      if (current.some((v) => String(v) === idStr)) {
+        return {
+          ...f,
+          [fieldName]: current.filter((v) => String(v) !== idStr),
+        };
       } else {
         return { ...f, [fieldName]: [...current, id] };
       }
@@ -134,10 +159,10 @@ const ProductForm = () => {
       description: form.description,
       price: parseFloat(form.price),
       images: form.images.filter((u) => u.trim()),
-      categoryIds: form.categoryIds.length > 0 ? form.categoryIds : null,
-      sizeIds: form.sizeIds.length > 0 ? form.sizeIds : null,
-      kitchenIds: form.kitchenIds.length > 0 ? form.kitchenIds : null,
-      cuisineIds: form.cuisineIds.length > 0 ? form.cuisineIds : null,
+      categoryIds: form.categoryIds,
+      sizeIds: form.sizeIds,
+      kitchenIds: form.kitchenIds,
+      cuisineIds: form.cuisineIds,
       isFeatured: form.isFeatured,
       isArchived: form.isArchived,
       // For backward compatibility, set first item as single ID
@@ -148,15 +173,26 @@ const ProductForm = () => {
     };
     try {
       if (isEdit) {
+        console.log(
+          "[ProductForm] Sending PATCH to /products/" + productId,
+          payload,
+        );
         await apiClient.patch(`/products/${productId}`, payload);
+        console.log("[ProductForm] PATCH successful");
         toast.success("Product updated");
       } else {
+        console.log("[ProductForm] Sending POST to /products", payload);
         await apiClient.post("/products", payload);
+        console.log("[ProductForm] POST successful");
         toast.success("Product created");
       }
       navigate("/seller/products");
-    } catch {
-      toast.error("Failed to save product");
+    } catch (err) {
+      console.error("[ProductForm] Error saving product:", err);
+      toast.error(
+        "Failed to save product: " +
+          (err.response?.data?.message || err.message),
+      );
     } finally {
       setSaving(false);
     }
@@ -259,7 +295,9 @@ const ProductForm = () => {
                   >
                     <input
                       type="checkbox"
-                      checked={form.categoryIds.includes(c.id)}
+                      checked={form.categoryIds.some(
+                        (v) => String(v) === String(c.id),
+                      )}
                       onChange={() => toggleMultiSelect("categoryIds", c.id)}
                       className="w-4 h-4 accent-black rounded"
                     />
@@ -279,7 +317,9 @@ const ProductForm = () => {
                   >
                     <input
                       type="checkbox"
-                      checked={form.sizeIds.includes(s.id)}
+                      checked={form.sizeIds.some(
+                        (v) => String(v) === String(s.id),
+                      )}
                       onChange={() => toggleMultiSelect("sizeIds", s.id)}
                       className="w-4 h-4 accent-black rounded"
                     />
@@ -299,7 +339,9 @@ const ProductForm = () => {
                   >
                     <input
                       type="checkbox"
-                      checked={form.kitchenIds.includes(k.id)}
+                      checked={form.kitchenIds.some(
+                        (v) => String(v) === String(k.id),
+                      )}
                       onChange={() => toggleMultiSelect("kitchenIds", k.id)}
                       className="w-4 h-4 accent-black rounded"
                     />
@@ -319,7 +361,9 @@ const ProductForm = () => {
                   >
                     <input
                       type="checkbox"
-                      checked={form.cuisineIds.includes(c.id)}
+                      checked={form.cuisineIds.some(
+                        (v) => String(v) === String(c.id),
+                      )}
                       onChange={() => toggleMultiSelect("cuisineIds", c.id)}
                       className="w-4 h-4 accent-black rounded"
                     />

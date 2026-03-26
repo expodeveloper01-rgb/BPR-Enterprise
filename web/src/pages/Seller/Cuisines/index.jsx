@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import SellerLayout from "../SellerLayout";
 import apiClient from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { TableRowSkeletons } from "@/components/ui/skeleton";
 import { Plus, Edit2, Trash2, X } from "lucide-react";
 
 const SellerCuisines = () => {
@@ -155,11 +156,26 @@ const SellerCuisines = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden overflow-x-auto">
           {loading ? (
-            <div className="text-center py-16 text-muted-foreground">
-              Loading...
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="px-4 py-3 text-left font-medium text-neutral-700">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-700">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium text-neutral-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <TableRowSkeletons count={5} />
+              </tbody>
+            </table>
           ) : cuisines.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
@@ -168,7 +184,7 @@ const SellerCuisines = () => {
               <p className="text-muted-foreground text-sm">No cuisines yet</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-max">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 text-left">
                   <th className="px-4 py-3 font-medium text-neutral-600">

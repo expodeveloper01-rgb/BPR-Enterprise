@@ -12,6 +12,7 @@ import SizeFilters from "./components/SizeFilters";
 import KitchenFilters from "./components/KitchenFilters";
 import CuisineFilters from "./components/CuisineFilters";
 import PageContent from "./components/PageContent";
+import { ProductCardSkeleton, FilterSkeletons } from "@/components/ui/skeleton";
 import { SlidersHorizontal, X } from "lucide-react";
 
 const MenuPage = () => {
@@ -22,25 +23,44 @@ const MenuPage = () => {
   const [cuisines, setCuisines] = useState([]);
   const [products, setProducts] = useState([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [loadingFilters, setLoadingFilters] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   useEffect(() => {
-    getCategories().then(setCategories);
-    getSizes().then(setSizes);
-    getKitchens().then(setKitchens);
-    getCuisines().then(setCuisines);
+    setLoadingFilters(true);
+    Promise.all([
+      getCategories().then(setCategories),
+      getSizes().then(setSizes),
+      getKitchens().then(setKitchens),
+      getCuisines().then(setCuisines),
+    ]).finally(() => setLoadingFilters(false));
   }, []);
 
   useEffect(() => {
+    setLoadingProducts(true);
+    // Find Uncle Brew kitchen ID
+    const uncleBrew = kitchens.find((k) => k.name === "Uncle Brew");
+    const kitchenId = uncleBrew?.id;
+
     getProducts({
       size: searchParams.get("size") || undefined,
       isFeatured: searchParams.get("isFeatured") || undefined,
       cuisine: searchParams.get("cuisine") || undefined,
       category: searchParams.get("category") || undefined,
-      kitchen: searchParams.get("kitchen") || undefined,
-    }).then(setProducts);
-  }, [searchParams]);
+      kitchen: kitchenId,
+    })
+      .then(setProducts)
+      .finally(() => setLoadingProducts(false));
+  }, [searchParams, kitchens]);
 
-  const filterPanel = (
+  const filterPanel = loadingFilters ? (
+    <div className="space-y-6">
+      <FilterSkeletons count={5} />
+      <FilterSkeletons count={4} />
+      <FilterSkeletons count={3} />
+      <FilterSkeletons count={3} />
+    </div>
+  ) : (
     <FilterContainer>
       <CategoryFilters categories={categories} />
       <SizeFilters sizes={sizes} />
@@ -93,7 +113,7 @@ const MenuPage = () => {
 
           {/* Products */}
           <div className="col-span-12 md:col-span-10">
-            <PageContent products={products} />
+            <PageContent products={products} loading={loadingProducts} />
           </div>
         </div>
       </Container>

@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import useAuth from "@/hooks/use-auth";
 import getOrders from "@/actions/get-orders";
 import Container from "@/components/container";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import PageContent from "./components/PageContent";
+import CustomerOrderDetail from "./components/CustomerOrderDetail";
 
 const OrdersPage = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Redirect to sign in if not authenticated
   if (!user) {
@@ -23,40 +25,62 @@ const OrdersPage = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Container className="px-4 md:px-12 py-10">
         <div>
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
             <Link
-              to="/uncle-brew"
-              className="flex items-center gap-1 hover:text-neutral-800 transition-colors"
+              to="/"
+              className="flex items-center gap-1 hover:text-neutral-800 transition-colors font-medium"
             >
-              <Home className="w-4 h-4" />
-              Home
+              BeLaPaRi
             </Link>
             <ChevronRight className="w-4 h-4" />
             <span className="text-neutral-800 font-medium">My Orders</span>
           </nav>
 
-          <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
             My Orders
           </h1>
+          <p className="text-neutral-600 mb-8">
+            Track and manage all your orders in one place
+          </p>
 
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-20 bg-white rounded-2xl border border-gray-100 animate-pulse"
+                  className="h-24 bg-gray-100 rounded-2xl border border-gray-200 animate-pulse"
                 />
               ))}
             </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-neutral-600 text-lg">No orders yet</p>
+              <p className="text-neutral-500 text-sm mt-2">
+                Start shopping to place your first order
+              </p>
+              <Link
+                to="/"
+                className="inline-block mt-4 px-6 py-2 bg-black text-white rounded-lg hover:bg-black/80 transition-colors"
+              >
+                Continue Shopping
+              </Link>
+            </div>
           ) : (
-            <PageContent orders={orders} />
+            <PageContent orders={orders} onViewDetail={setSelectedOrder} />
           )}
         </div>
       </Container>
+
+      {selectedOrder && (
+        <CustomerOrderDetail
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
+      )}
     </div>
   );
 };

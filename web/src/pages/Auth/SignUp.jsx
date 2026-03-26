@@ -4,6 +4,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 import useAuth from "@/hooks/use-auth";
 import useCart from "@/hooks/use-carts";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Mail } from "lucide-react";
 import logo from "/assets/img/belapari-icon-text.png";
@@ -185,10 +186,17 @@ const SignUpPage = () => {
               <OtpInput value={code} onChange={setCode} />
               <Button
                 type="submit"
-                className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
+                className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all flex items-center justify-center gap-2"
                 disabled={loading || code.length < 6}
               >
-                {loading ? "Verifying…" : "Verify Email"}
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="sm" className="!flex" />
+                    Verifying…
+                  </>
+                ) : (
+                  "Verify Email"
+                )}
               </Button>
             </form>
 
@@ -298,10 +306,17 @@ const SignUpPage = () => {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
+              className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all flex items-center justify-center gap-2"
               disabled={loading}
             >
-              {loading ? "Sending code…" : "Continue"}
+              {loading ? (
+                <>
+                  <LoadingSpinner size="sm" className="!flex" />
+                  Sending code…
+                </>
+              ) : (
+                "Continue"
+              )}
             </Button>
           </form>
 

@@ -1,20 +1,38 @@
 import { useEffect, useState } from "react";
 import SellerLayout from "../SellerLayout";
+import { useSeller } from "@/context/SellerContext";
 import apiClient from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { ShoppingBag } from "lucide-react";
+import OrderDetail from "./OrderDetail";
 
 const SellerOrders = () => {
+  const { selectedKitchenId } = useSeller();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const fetchOrders = () => {
+    if (!selectedKitchenId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    apiClient
+      .get(`/admin/orders?kitchen=${selectedKitchenId}`)
+      .then((r) => setOrders(r.data))
+      .catch(() => {
+        toast.error("Failed to load orders");
+        setOrders([]);
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    apiClient
-      .get("/admin/orders")
-      .then((r) => setOrders(r.data))
-      .catch(() => toast.error("Failed to load orders"))
-      .finally(() => setLoading(false));
-  }, []);
+    fetchOrders();
+  }, [selectedKitchenId]);
 
   return (
     <SellerLayout>
@@ -26,7 +44,7 @@ const SellerOrders = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden overflow-x-auto">
           {loading ? (
             <div className="text-center py-16 text-muted-foreground">
               Loading...
@@ -39,7 +57,7 @@ const SellerOrders = () => {
               <p className="text-muted-foreground text-sm">No orders yet</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-max">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 text-left">
                   <th className="px-4 py-3 font-medium text-neutral-600">
@@ -69,11 +87,15 @@ const SellerOrders = () => {
                   return (
                     <tr
                       key={order.id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
+                      onClick={() => setSelectedOrder(order)}
+                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <td className="px-4 py-3">
                         <p className="font-mono text-xs font-semibold text-neutral-800">
-                          #{order.id.slice(-8).toUpperCase()}
+                          #
+                          {typeof order.id === "string"
+                            ? order.id.slice(-8).toUpperCase()
+                            : order.id}
                         </p>
                         <p className="text-xs text-muted-foreground md:hidden">
                           {order.user?.name ?? "Guest"}
@@ -120,6 +142,14 @@ const SellerOrders = () => {
           )}
         </div>
       </div>
+
+      {selectedOrder && (
+        <OrderDetail
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onStatusUpdate={fetchOrders}
+        />
+      )}
     </SellerLayout>
   );
 };

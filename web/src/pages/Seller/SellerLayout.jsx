@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import useAuth from "@/hooks/use-auth";
+import { useSeller } from "@/context/SellerContext";
 import {
   LayoutDashboard,
   Package,
@@ -14,6 +15,7 @@ import {
   UtensilsCrossed,
   Flame,
   Palette,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,13 +30,44 @@ const navItems = [
   { to: "/seller/users", label: "Users", icon: Users },
 ];
 
-const SidebarContent = ({ pathname, user, logout, onNavClick }) => (
+const SidebarContent = ({
+  pathname,
+  user,
+  logout,
+  onNavClick,
+  selectedKitchen,
+  kitchens,
+  setKitchen,
+  loadingKitchens,
+}) => (
   <div className="flex flex-col h-full">
-    <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-      <span className="font-bold text-lg text-neutral-800 tracking-tight">
-        Uncle Brew <span className="text-amber-600">Seller</span>
-      </span>
+    <div className="px-6 py-5 border-b border-gray-100">
+      <div className="mb-4">
+        <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wider">
+          Seller Panel
+        </span>
+        <p className="font-bold text-lg text-neutral-800 mt-1 tracking-tight capitalize">
+          {loadingKitchens
+            ? "Loading..."
+            : selectedKitchen?.name || "Select Store"}
+        </p>
+      </div>
+
+      {!loadingKitchens && kitchens.length > 1 && (
+        <select
+          value={selectedKitchen?.id || ""}
+          onChange={(e) => setKitchen(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-black/20"
+        >
+          {kitchens.map((k) => (
+            <option key={k.id} value={k.id}>
+              {k.name}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
+
     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
       {navItems.map(({ to, label, icon: Icon, exact }) => {
         const active = exact ? pathname === to : pathname.startsWith(to);
@@ -76,6 +109,12 @@ const SidebarContent = ({ pathname, user, logout, onNavClick }) => (
 
 const SellerLayout = ({ children }) => {
   const { user, token, logout, refreshUser } = useAuth();
+  const {
+    selectedKitchen,
+    kitchens,
+    setKitchen,
+    loading: loadingKitchens,
+  } = useSeller();
   const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -119,6 +158,10 @@ const SellerLayout = ({ children }) => {
           user={user}
           logout={logout}
           onNavClick={() => setSidebarOpen(false)}
+          selectedKitchen={selectedKitchen}
+          kitchens={kitchens}
+          setKitchen={setKitchen}
+          loadingKitchens={loadingKitchens}
         />
       </aside>
 

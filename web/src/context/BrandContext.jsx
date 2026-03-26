@@ -16,6 +16,12 @@ const BRANDS = {
     logo: "/assets/img/uncle-brew.png",
     color: "from-pink-500 to-fuchsia-600",
   },
+  diomedes: {
+    id: "diomedes",
+    name: "Diomedes Bakeshop",
+    logo: "/assets/img/diomedes-logo.png",
+    color: "from-amber-500 to-orange-600",
+  },
 };
 
 export const BrandProvider = ({ children }) => {
@@ -27,6 +33,9 @@ export const BrandProvider = ({ children }) => {
     if (pathname.startsWith("/uncle-brew")) {
       setCurrentBrand(BRANDS["uncle-brew"]);
       document.title = "Uncle Brew - Cebu Philippines";
+    } else if (pathname.startsWith("/diomedes")) {
+      setCurrentBrand(BRANDS.diomedes);
+      document.title = "Diomedes Bakeshop - Cebu Philippines";
     } else {
       // Default to BeLaPaRi for all other routes (/, /stores, /sign-in, etc.)
       setCurrentBrand(BRANDS.belapari);

@@ -11,12 +11,13 @@ const CartActionButton = ({ scrolled }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isUncleBrew = pathname.startsWith("/uncle-brew");
+  const isDiomedes = pathname.startsWith("/diomedes");
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted || !isUncleBrew) return null;
+  if (!mounted) return null;
 
   return (
     <div className="ml-4 flex items-center justify-center gap-x-4">
@@ -25,7 +26,10 @@ const CartActionButton = ({ scrolled }) => {
           "rounded-full h-9",
           scrolled ? "bg-black" : "bg-white/90 hover:bg-white",
         )}
-        onClick={() => navigate("/uncle-brew/cart")}
+        onClick={() => {
+          // Always navigate to unified cart page
+          navigate("/cart");
+        }}
       >
         <ShoppingBag className={cn("w-4 h-4", scrolled ? "" : "text-black")} />
         <span className={cn("text-sm ml-2", scrolled ? "" : "text-black")}>

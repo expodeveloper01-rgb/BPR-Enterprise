@@ -1,24 +1,46 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SellerLayout from "../SellerLayout";
+import { useSeller } from "@/context/SellerContext";
 import apiClient from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Archive, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SellerProducts = () => {
+  const { selectedKitchenId } = useSeller();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProducts = () => {
+    console.log(
+      "🔍 Fetching products... selectedKitchenId:",
+      selectedKitchenId,
+    );
+    if (!selectedKitchenId) {
+      console.warn("⚠️  selectedKitchenId is null/undefined");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const url = `/products?includeArchived=true&kitchen=${selectedKitchenId}`;
+    console.log("📡 Request URL:", url);
     apiClient
-      .get("/products?includeArchived=true")
-      .then((r) => setProducts(r.data))
-      .catch(() => toast.error("Failed to load products"))
+      .get(url)
+      .then((r) => {
+        console.log("✅ Products loaded:", r.data);
+        setProducts(r.data);
+      })
+      .catch((err) => {
+        console.error("❌ Failed to load products:", err);
+        toast.error("Failed to load products");
+        setProducts([]);
+      })
       .finally(() => setLoading(false));
   };
 
-  useEffect(fetchProducts, []);
+  useEffect(fetchProducts, [selectedKitchenId]);
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
@@ -36,8 +58,12 @@ const SellerProducts = () => {
       const updated = await apiClient.patch(`/products/${product.id}`, {
         isArchived: !product.isArchived,
       });
-      setProducts((prev) => prev.map((p) => (p.id === product.id ? updated.data : p)));
-      toast.success(updated.data.isArchived ? "Product archived" : "Product restored");
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? updated.data : p)),
+      );
+      toast.success(
+        updated.data.isArchived ? "Product archived" : "Product restored",
+      );
     } catch {
       toast.error("Failed to update product");
     }
@@ -49,7 +75,9 @@ const SellerProducts = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-neutral-800">Products</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{products.length} total</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {products.length} total
+            </p>
           </div>
           <Link to="/seller/products/new">
             <Button className="rounded-full bg-black text-white hover:bg-black/80 gap-2">
@@ -58,25 +86,42 @@ const SellerProducts = () => {
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden overflow-x-auto">
           {loading ? (
-            <div className="text-center py-16 text-muted-foreground">Loading...</div>
+            <div className="text-center py-16 text-muted-foreground">
+              Loading...
+            </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">No products yet.</div>
+            <div className="text-center py-16 text-muted-foreground">
+              No products yet.
+            </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-max">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-medium text-neutral-600">Product</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">Category</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">Price</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">Status</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Actions</th>
+                  <th className="px-4 py-3 font-medium text-neutral-600">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">
+                    Category
+                  </th>
+                  <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">
+                    Price
+                  </th>
+                  <th className="px-4 py-3 font-medium text-neutral-600">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={product.id}
+                    className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {product.images?.[0]?.url ? (
@@ -89,21 +134,28 @@ const SellerProducts = () => {
                           <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0" />
                         )}
                         <div>
-                          <p className="font-medium text-neutral-800 leading-snug">{product.name}</p>
+                          <p className="font-medium text-neutral-800 leading-snug">
+                            {product.name}
+                          </p>
                           {product.isFeatured && (
                             <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 font-semibold">
-                              <Star className="w-2.5 h-2.5" />Featured
+                              <Star className="w-2.5 h-2.5" />
+                              Featured
                             </span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-neutral-600 capitalize">{product.category ?? "—"}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-neutral-600 capitalize">
+                      {product.category ?? "—"}
+                    </td>
                     <td className="px-4 py-3 hidden md:table-cell font-semibold text-neutral-800">
                       ₱{Number(product.price).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${product.isArchived ? "bg-gray-100 text-gray-500" : "bg-green-50 text-green-700"}`}>
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${product.isArchived ? "bg-gray-100 text-gray-500" : "bg-green-50 text-green-700"}`}
+                      >
                         {product.isArchived ? "Archived" : "Active"}
                       </span>
                     </td>

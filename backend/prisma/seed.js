@@ -5,28 +5,90 @@ const prisma = new PrismaClient();
 async function main() {
   // Seed categories
   const categories = await Promise.all([
-    prisma.category.upsert({ where: { id: "cat-drinks" }, update: {}, create: { id: "cat-drinks", name: "Drinks", billboardLabel: "Refreshing Drinks" } }),
-    prisma.category.upsert({ where: { id: "cat-food" }, update: {}, create: { id: "cat-food", name: "Food", billboardLabel: "Delicious Food" } }),
-    prisma.category.upsert({ where: { id: "cat-pastry" }, update: {}, create: { id: "cat-pastry", name: "Pastry", billboardLabel: "Fresh Pastries" } }),
+    prisma.category.upsert({
+      where: { id: "cat-drinks" },
+      update: {},
+      create: {
+        id: "cat-drinks",
+        name: "Drinks",
+        billboardLabel: "Refreshing Drinks",
+      },
+    }),
+    prisma.category.upsert({
+      where: { id: "cat-food" },
+      update: {},
+      create: {
+        id: "cat-food",
+        name: "Food",
+        billboardLabel: "Delicious Food",
+      },
+    }),
+    prisma.category.upsert({
+      where: { id: "cat-pastry" },
+      update: {},
+      create: {
+        id: "cat-pastry",
+        name: "Pastry",
+        billboardLabel: "Fresh Pastries",
+      },
+    }),
   ]);
 
   // Seed sizes
   const sizes = await Promise.all([
-    prisma.size.upsert({ where: { id: "sz-small" }, update: {}, create: { id: "sz-small", name: "Small", value: "S" } }),
-    prisma.size.upsert({ where: { id: "sz-medium" }, update: {}, create: { id: "sz-medium", name: "Medium", value: "M" } }),
-    prisma.size.upsert({ where: { id: "sz-large" }, update: {}, create: { id: "sz-large", name: "Large", value: "L" } }),
+    prisma.size.upsert({
+      where: { id: "sz-small" },
+      update: {},
+      create: { id: "sz-small", name: "Small", value: "S" },
+    }),
+    prisma.size.upsert({
+      where: { id: "sz-medium" },
+      update: {},
+      create: { id: "sz-medium", name: "Medium", value: "M" },
+    }),
+    prisma.size.upsert({
+      where: { id: "sz-large" },
+      update: {},
+      create: { id: "sz-large", name: "Large", value: "L" },
+    }),
   ]);
 
   // Seed kitchens
   const kitchens = await Promise.all([
-    prisma.kitchen.upsert({ where: { id: "kt-local" }, update: {}, create: { id: "kt-local", name: "Local", value: "local" } }),
-    prisma.kitchen.upsert({ where: { id: "kt-western" }, update: {}, create: { id: "kt-western", name: "Western", value: "western" } }),
+    prisma.kitchen.upsert({
+      where: { id: "kt-local" },
+      update: {},
+      create: { id: "kt-local", name: "Local", value: "local" },
+    }),
+    prisma.kitchen.upsert({
+      where: { id: "kt-western" },
+      update: {},
+      create: { id: "kt-western", name: "Western", value: "western" },
+    }),
+    prisma.kitchen.upsert({
+      where: { id: "kt-uncle-brew" },
+      update: {},
+      create: { id: "kt-uncle-brew", name: "Uncle Brew", value: "uncle-brew" },
+    }),
+    prisma.kitchen.upsert({
+      where: { id: "kt-diomedes" },
+      update: {},
+      create: { id: "kt-diomedes", name: "Diomedes", value: "diomedes" },
+    }),
   ]);
 
   // Seed cuisines
   const cuisines = await Promise.all([
-    prisma.cuisine.upsert({ where: { id: "cu-filipino" }, update: {}, create: { id: "cu-filipino", name: "Filipino", value: "filipino" } }),
-    prisma.cuisine.upsert({ where: { id: "cu-american" }, update: {}, create: { id: "cu-american", name: "American", value: "american" } }),
+    prisma.cuisine.upsert({
+      where: { id: "cu-filipino" },
+      update: {},
+      create: { id: "cu-filipino", name: "Filipino", value: "filipino" },
+    }),
+    prisma.cuisine.upsert({
+      where: { id: "cu-american" },
+      update: {},
+      create: { id: "cu-american", name: "American", value: "american" },
+    }),
   ]);
 
   // Seed products
@@ -38,7 +100,7 @@ async function main() {
       isFeatured: true,
       categoryId: "cat-drinks",
       sizeId: "sz-medium",
-      kitchenId: "kt-local",
+      kitchenId: "kt-uncle-brew",
       cuisineId: "cu-filipino",
       image: "/assets/img/Food.png",
     },
@@ -49,7 +111,7 @@ async function main() {
       isFeatured: true,
       categoryId: "cat-drinks",
       sizeId: "sz-large",
-      kitchenId: "kt-western",
+      kitchenId: "kt-uncle-brew",
       cuisineId: "cu-american",
       image: "/assets/img/Food1.png",
     },
@@ -60,7 +122,7 @@ async function main() {
       isFeatured: true,
       categoryId: "cat-food",
       sizeId: "sz-large",
-      kitchenId: "kt-western",
+      kitchenId: "kt-uncle-brew",
       cuisineId: "cu-american",
       image: "/assets/img/Food4.png",
     },
@@ -71,7 +133,7 @@ async function main() {
       isFeatured: true,
       categoryId: "cat-food",
       sizeId: "sz-medium",
-      kitchenId: "kt-local",
+      kitchenId: "kt-uncle-brew",
       cuisineId: "cu-filipino",
       image: "/assets/img/Food.png",
     },
@@ -82,7 +144,7 @@ async function main() {
       isFeatured: true,
       categoryId: "cat-pastry",
       sizeId: "sz-small",
-      kitchenId: "kt-western",
+      kitchenId: "kt-diomedes",
       cuisineId: "cu-american",
       image: "/assets/img/Food1.png",
     },
@@ -93,7 +155,7 @@ async function main() {
       isFeatured: true,
       categoryId: "cat-pastry",
       sizeId: "sz-small",
-      kitchenId: "kt-local",
+      kitchenId: "kt-diomedes",
       cuisineId: "cu-filipino",
       image: "/assets/img/Food4.png",
     },
@@ -104,7 +166,7 @@ async function main() {
       isFeatured: false,
       categoryId: "cat-drinks",
       sizeId: "sz-medium",
-      kitchenId: "kt-western",
+      kitchenId: "kt-uncle-brew",
       cuisineId: "cu-american",
       image: "/assets/img/Food.png",
     },
@@ -115,9 +177,31 @@ async function main() {
       isFeatured: false,
       categoryId: "cat-food",
       sizeId: "sz-medium",
-      kitchenId: "kt-western",
+      kitchenId: "kt-uncle-brew",
       cuisineId: "cu-american",
       image: "/assets/img/Food1.png",
+    },
+    {
+      id: "prod-chocolate-croissant",
+      name: "Chocolate Croissant",
+      price: 95,
+      isFeatured: true,
+      categoryId: "cat-pastry",
+      sizeId: "sz-small",
+      kitchenId: "kt-diomedes",
+      cuisineId: "cu-american",
+      image: "/assets/img/Food.png",
+    },
+    {
+      id: "prod-sourdough-bread",
+      name: "Artisan Sourdough",
+      price: 120,
+      isFeatured: true,
+      categoryId: "cat-pastry",
+      sizeId: "sz-large",
+      kitchenId: "kt-diomedes",
+      cuisineId: "cu-american",
+      image: "/assets/img/Food4.png",
     },
   ];
 
@@ -160,5 +244,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

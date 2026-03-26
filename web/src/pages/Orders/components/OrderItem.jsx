@@ -8,7 +8,7 @@ const statusColors = {
   Cancelled: "bg-red-50 text-red-700 border-red-200",
 };
 
-const OrderItem = ({ order }) => {
+const OrderItem = ({ order, onViewDetail }) => {
   const handleRefresh = () => window.location.reload();
 
   const total = order.orderItems.reduce(
@@ -17,7 +17,10 @@ const OrderItem = ({ order }) => {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+    <div
+      onClick={() => onViewDetail?.(order)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 cursor-pointer hover:shadow-md transition-shadow"
+    >
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Product images */}
         <div className="flex items-center gap-2 shrink-0">

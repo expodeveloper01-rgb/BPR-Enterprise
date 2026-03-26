@@ -1,11 +1,20 @@
 import { PopularContent } from "@/components/popular-content";
+import { ProductCardSkeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Home, X, ShoppingBag } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import qs from "query-string";
 
-const PageContent = ({ products }) => {
+const PageContent = ({ products, loading = false }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isDiomedes = pathname.startsWith("/diomedes");
+  const store = isDiomedes ? "diomedes" : "uncle-brew";
   const currentParams = Object.fromEntries(searchParams.entries());
 
   const handleRemove = (param) => {
@@ -23,7 +32,7 @@ const PageContent = ({ products }) => {
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
         <Link
-          to="/uncle-brew"
+          to={`/${store}`}
           className="flex items-center gap-1 hover:text-neutral-800 transition-colors"
         >
           <Home className="w-4 h-4" />
@@ -31,7 +40,7 @@ const PageContent = ({ products }) => {
         </Link>
         <ChevronRight className="w-4 h-4" />
         <Link
-          to="/uncle-brew/menu"
+          to={`/${store}/menu`}
           className="hover:text-neutral-800 transition-colors"
         >
           Menu
@@ -63,7 +72,9 @@ const PageContent = ({ products }) => {
       )}
 
       {/* Products grid */}
-      {products.length > 0 ? (
+      {loading ? (
+        <ProductCardSkeleton count={8} />
+      ) : products.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {products.map((product) => (
             <PopularContent data={product} key={product.id} />

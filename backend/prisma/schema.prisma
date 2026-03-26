@@ -88,6 +88,12 @@ model Product {
 
   cuisine    Cuisine?  @relation(fields: [cuisineId], references: [id])
   cuisineId  String?
+
+  // Multi-select fields (stored as JSONB in database)
+  categoryIds Json   @default("[]")
+  sizeIds     Json   @default("[]")
+  kitchenIds  Json   @default("[]")
+  cuisineIds  Json   @default("[]")
 }
 
 model Image {
@@ -106,6 +112,8 @@ model Order {
   phone           String   @default("")
   address         String   @default("")
   order_status    String   @default("Processing")
+  statusMessage   String   @default("")
+  statusHistory   Json     @default("[]")
   paymentMethod   String   @default("cod")
   referenceNumber String   @default("")
   createdAt       DateTime @default(now())

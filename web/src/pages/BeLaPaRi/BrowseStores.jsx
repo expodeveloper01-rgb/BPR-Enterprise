@@ -8,24 +8,24 @@ const stores = [
     name: "Uncle Brew",
     description: "Premium Coffee & Gourmet Bites",
     category: "Coffee & Food",
-    location: "Cebu City, Philippines",
+    location: "San Francisco, CA",
     image: "/assets/img/uncle-brew.png",
     features: ["Specialty Coffee", "Fresh Pastries", "Gourmet Sandwiches"],
     status: "active",
   },
   {
-    id: "coming-soon-1",
+    id: "diomedes",
     name: "Diomedes Bakeshop",
     description: "Artisanal Bakery & Café",
     category: "Bakery",
-    location: "Coming Soon",
-    image: null,
-    features: ["Sourdough Bread", "Pastries", "Premium Coffee"],
-    status: "coming-soon",
+    location: "Cebu City, Philippines",
+    image: "/assets/img/diomedes-logo.png",
+    features: ["Sourdough Bread", "Fresh Pastries", "Premium Coffee"],
+    status: "active",
   },
   {
     id: "coming-soon-2",
-    name: "Annalyn's Eatery",
+    name: "Garden Fresh",
     description: "Organic Farm-to-Table Restaurant",
     category: "Restaurant",
     location: "Coming Soon",
@@ -54,7 +54,7 @@ const BrowseStores = () => {
   const comingSoonStores = stores.filter((s) => s.status === "coming-soon");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100">
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-16 text-center">
         <div className="space-y-6">

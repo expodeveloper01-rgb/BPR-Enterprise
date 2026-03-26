@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-gray-100">
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-16 text-center">
         <div className="space-y-6">
@@ -109,7 +109,7 @@ const About = () => {
             platforms.
           </p>
           <Link
-            to="/browse-stores"
+            to="/stores"
             className="inline-flex items-center gap-2 bg-white text-fuchsia-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
             Browse Stores <ChevronRight className="w-5 h-5" />

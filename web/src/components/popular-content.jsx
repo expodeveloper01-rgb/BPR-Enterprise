@@ -16,14 +16,14 @@ export const PopularContent = ({ data }) => {
       return;
     }
     // Navigate to product details where they can select size
-    navigate(`/menu/${data.id}`);
+    navigate(`/uncle-brew/menu/${data.id}`);
   };
 
   return (
     <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image */}
       <Link
-        to={`/menu/${data.id}`}
+        to={`/uncle-brew/menu/${data.id}`}
         className="block relative overflow-hidden bg-gray-50 aspect-square"
       >
         <img
@@ -42,7 +42,7 @@ export const PopularContent = ({ data }) => {
       {/* Content */}
       <div className="flex flex-col flex-1 p-3 gap-2">
         {/* Badges */}
-        <div className="flex flex-wrap gap-0.5">
+        {/* <div className="flex flex-wrap gap-0.5">
           {data.cuisine && (
             <span className="rounded-full bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[9px] font-semibold capitalize">
               {data.cuisine}
@@ -58,9 +58,9 @@ export const PopularContent = ({ data }) => {
               {data.size}
             </span>
           )}
-        </div>
+        </div> */}
 
-        <Link to={`/menu/${data.id}`}>
+        <Link to={`/uncle-brew/menu/${data.id}`}>
           <h3 className="font-semibold text-sm text-neutral-800 leading-snug hover:underline line-clamp-2">
             {data.name}
           </h3>
@@ -76,7 +76,7 @@ export const PopularContent = ({ data }) => {
           <span className="text-base font-bold text-neutral-900">
             ₱{Number(data.price).toLocaleString()}
           </span>
-          <Link to={`/menu/${data.id}`}>
+          <Link to={`/uncle-brew/menu/${data.id}`}>
             <Button
               size="sm"
               className="rounded-full bg-black text-white hover:bg-black/80 px-3 text-xs h-7"

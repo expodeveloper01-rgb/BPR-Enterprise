@@ -7,9 +7,12 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "migrate": "node prisma/migrate.js",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "check:data": "node check-data.js",
+    "fix:kitchen": "node fix-products-kitchen.js"
   },
   "dependencies": {
+    "@prisma/client": "^5.8.0",
     "@supabase/supabase-js": "^2.100.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

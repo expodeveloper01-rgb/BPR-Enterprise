@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { CircleX } from "lucide-react";
 
 const AdPopup = ({ data }) => {
+  // Guard against undefined data
+  if (!data) return null;
+
   const [showPopup, setShowPopup] = useState(true);
   const [animatePopup, setAnimatePopup] = useState(false);
+  const { pathname } = useLocation();
+  const isUncleBrew = pathname.startsWith("/uncle-brew");
+  const isDiomedes = pathname.startsWith("/diomedes");
+  const store = isUncleBrew
+    ? "uncle-brew"
+    : isDiomedes
+      ? "diomedes"
+      : "uncle-brew";
 
   useEffect(() => {
     const storedProductId = localStorage.getItem("lastProductId");
@@ -56,7 +67,7 @@ const AdPopup = ({ data }) => {
         <div>
           <h5 className="text-sm font-bold">{data.name}</h5>
           <p className="text-sm text-neutral-600">₱{data.price}</p>
-          <Link to={`/menu/${data.id}`}>
+          <Link to={`/${store}/menu/${data.id}`}>
             <Button size="sm" className="mt-2">
               Order Now
             </Button>

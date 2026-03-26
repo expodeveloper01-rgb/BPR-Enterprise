@@ -5,6 +5,9 @@ import { Separator } from "@/components/ui/separator";
 import useCart from "@/hooks/use-carts";
 import useAuth from "@/hooks/use-auth";
 import getSizes from "@/actions/get-sizes";
+import getCategories from "@/actions/get-categories";
+import getCuisines from "@/actions/get-cuisines";
+import getKitchens from "@/actions/get-kitchens";
 import toast from "react-hot-toast";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 
@@ -12,17 +15,58 @@ const Info = ({ product }) => {
   const [qty, setQty] = useState(1);
   const [sizes, setSizes] = useState([]);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [tags, setTags] = useState([]);
   const cart = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    getSizes()
-      .then((data) => {
-        setSizes(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setSizes([]));
-  }, []);
+    Promise.all([
+      getSizes(),
+      getCategories(),
+      getCuisines(),
+      getKitchens(),
+    ]).then(([allSizes, allCategories, allCuisines, allKitchens]) => {
+      // Filter sizes to only include those selected for this product
+      const filteredSizes =
+        product?.sizeIds && product.sizeIds.length > 0
+          ? allSizes.filter((size) =>
+              product.sizeIds.some((id) => String(id) === String(size.id)),
+            )
+          : []; // Show no sizes if product has no sizeIds
+      setSizes(filteredSizes);
+
+      // Get all selected categories, cuisines, kitchens
+      const selectedCategories =
+        product?.categoryIds && product.categoryIds.length > 0
+          ? allCategories.filter((cat) =>
+              product.categoryIds.some((id) => String(id) === String(cat.id)),
+            )
+          : [];
+
+      const selectedCuisines =
+        product?.cuisineIds && product.cuisineIds.length > 0
+          ? allCuisines.filter((cui) =>
+              product.cuisineIds.some((id) => String(id) === String(cui.id)),
+            )
+          : [];
+
+      const selectedKitchens =
+        product?.kitchenIds && product.kitchenIds.length > 0
+          ? allKitchens.filter((kit) =>
+              product.kitchenIds.some((id) => String(id) === String(kit.id)),
+            )
+          : [];
+
+      // Build tags from all selected items
+      const allTags = [
+        ...selectedCuisines.map((c) => c.name),
+        ...selectedCategories.map((c) => c.name),
+        ...selectedKitchens.map((k) => k.name),
+      ];
+      setTags(allTags);
+    });
+  }, [product]);
 
   const addToCart = () => {
     if (!user) {
@@ -31,7 +75,8 @@ const Info = ({ product }) => {
       return;
     }
 
-    if (!selectedSize) {
+    // Only require size if product has sizes
+    if (sizes.length > 0 && !selectedSize) {
       toast.error("Please select a size");
       return;
     }
@@ -41,8 +86,8 @@ const Info = ({ product }) => {
       name: product.name,
       price: product.price,
       images: product.images || [],
-      sizeId: selectedSize.id,
-      sizeName: selectedSize.name,
+      sizeId: selectedSize?.id,
+      sizeName: selectedSize?.name,
       category: product.category?.name,
       cuisine: product.cuisine?.name,
       kitchen: product.kitchen?.name,
@@ -53,13 +98,6 @@ const Info = ({ product }) => {
     setQty(1);
   };
 
-  const tags = [
-    product.cuisine,
-    product.category,
-    product.kitchen,
-    product.size,
-  ].filter(Boolean);
-
   return (
     <div className="flex flex-col gap-5">
       {/* Name + tags */}
@@ -69,9 +107,9 @@ const Info = ({ product }) => {
         </h1>
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            {tags.map((tag) => (
+            {tags.map((tag, idx) => (
               <span
-                key={tag}
+                key={idx}
                 className="px-3 py-1 rounded-full bg-gray-100 text-xs font-medium text-neutral-600 capitalize"
               >
                 {tag}
@@ -105,36 +143,34 @@ const Info = ({ product }) => {
 
       <Separator />
 
-      {/* Size Selection */}
-      <div>
-        <p className="text-xs text-neutral-400 uppercase tracking-widest font-medium mb-3">
-          Size *
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {sizes.length > 0 ? (
-            sizes.map((size) => (
-              <button
-                key={size.id}
-                type="button"
-                onClick={() => setSelectedSize(size)}
-                className={`p-3 rounded-lg border-2 font-medium transition-all ${
-                  selectedSize?.id === size.id
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 text-neutral-700 hover:border-gray-300"
-                }`}
-              >
-                {size.name}
-              </button>
-            ))
-          ) : (
-            <p className="col-span-3 text-sm text-muted-foreground text-center py-3">
-              Loading sizes...
+      {/* Size Selection - only show if sizes exist */}
+      {sizes.length > 0 && (
+        <>
+          <div>
+            <p className="text-xs text-neutral-400 uppercase tracking-widest font-medium mb-3">
+              Size *
             </p>
-          )}
-        </div>
-      </div>
+            <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
+              {sizes.map((size) => (
+                <button
+                  key={size.id}
+                  type="button"
+                  onClick={() => setSelectedSize(size)}
+                  className={`px-2 py-1.5 rounded-md border font-medium text-sm transition-all ${
+                    selectedSize?.id === size.id
+                      ? "border-black bg-black text-white"
+                      : "border-gray-200 text-neutral-700 hover:border-gray-300"
+                  }`}
+                >
+                  {size.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <Separator />
+          <Separator />
+        </>
+      )}
 
       {/* Quantity */}
       <div>

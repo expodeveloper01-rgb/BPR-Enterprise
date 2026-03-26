@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import getProducts from "@/actions/get-products";
+import getKitchens from "@/actions/get-kitchens";
 import HomepageContent from "./HomepageContent";
 
 const HomePage = () => {
@@ -7,8 +8,17 @@ const HomePage = () => {
   const [newProducts, setNewProducts] = useState([]);
 
   useEffect(() => {
-    getProducts({ isFeatured: true }).then(setProducts);
-    getProducts({ isFeatured: true }).then(setNewProducts);
+    getKitchens().then((kitchens) => {
+      const uncleBrew = kitchens.find((k) => k.name === "Uncle Brew");
+      const kitchenId = uncleBrew?.id;
+
+      if (kitchenId) {
+        getProducts({ isFeatured: true, kitchen: kitchenId }).then(setProducts);
+        getProducts({ isFeatured: true, kitchen: kitchenId }).then(
+          setNewProducts,
+        );
+      }
+    });
   }, []);
 
   return (

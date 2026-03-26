@@ -18,7 +18,7 @@ const SizeFilters = ({ sizes }) => {
     }
 
     const href = qs.stringifyUrl({
-      url: "/menu",
+      url: "/uncle-brew/menu",
       query: currentParams,
     });
 

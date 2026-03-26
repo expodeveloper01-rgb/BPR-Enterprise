@@ -102,7 +102,7 @@ const getProducts = async (req, res, next) => {
       params.push(size);
     }
     if (kitchen) {
-      conditions.push(`LOWER(k.name) = LOWER($${i++})`);
+      conditions.push(`p."kitchenId" = $${i++}`);
       params.push(kitchen);
     }
     if (cuisine) {
@@ -162,21 +162,25 @@ const createProduct = async (req, res, next) => {
 
     // Convert arrays to JSONB format, fallback to single ID if provided
     const catIds =
-      categoryIds && categoryIds.length > 0
+      Array.isArray(categoryIds) && categoryIds.length > 0
         ? categoryIds
         : categoryId
           ? [categoryId]
           : [];
     const szIds =
-      sizeIds && sizeIds.length > 0 ? sizeIds : sizeId ? [sizeId] : [];
+      Array.isArray(sizeIds) && sizeIds.length > 0
+        ? sizeIds
+        : sizeId
+          ? [sizeId]
+          : [];
     const kitIds =
-      kitchenIds && kitchenIds.length > 0
+      Array.isArray(kitchenIds) && kitchenIds.length > 0
         ? kitchenIds
         : kitchenId
           ? [kitchenId]
           : [];
     const cuisIds =
-      cuisineIds && cuisineIds.length > 0
+      Array.isArray(cuisineIds) && cuisineIds.length > 0
         ? cuisineIds
         : cuisineId
           ? [cuisineId]
@@ -282,48 +286,48 @@ const updateProduct = async (req, res, next) => {
     }
 
     // Handle category IDs
-    if (categoryIds !== undefined) {
-      const catIds = categoryIds && categoryIds.length > 0 ? categoryIds : [];
+    if (categoryIds !== undefined && categoryIds !== null) {
+      const catIds = Array.isArray(categoryIds) ? categoryIds : [];
       updates.push(`"categoryIds" = $${paramIndex++}`);
       params.push(JSON.stringify(catIds));
       updates.push(`"categoryId" = $${paramIndex++}`);
-      params.push(catIds[0] || null);
+      params.push(catIds.length > 0 ? catIds[0] : null);
     } else if (categoryId !== undefined) {
       updates.push(`"categoryId" = $${paramIndex++}`);
       params.push(categoryId || null);
     }
 
     // Handle size IDs
-    if (sizeIds !== undefined) {
-      const szIds = sizeIds && sizeIds.length > 0 ? sizeIds : [];
+    if (sizeIds !== undefined && sizeIds !== null) {
+      const szIds = Array.isArray(sizeIds) ? sizeIds : [];
       updates.push(`"sizeIds" = $${paramIndex++}`);
       params.push(JSON.stringify(szIds));
       updates.push(`"sizeId" = $${paramIndex++}`);
-      params.push(szIds[0] || null);
+      params.push(szIds.length > 0 ? szIds[0] : null);
     } else if (sizeId !== undefined) {
       updates.push(`"sizeId" = $${paramIndex++}`);
       params.push(sizeId || null);
     }
 
     // Handle kitchen IDs
-    if (kitchenIds !== undefined) {
-      const kitIds = kitchenIds && kitchenIds.length > 0 ? kitchenIds : [];
+    if (kitchenIds !== undefined && kitchenIds !== null) {
+      const kitIds = Array.isArray(kitchenIds) ? kitchenIds : [];
       updates.push(`"kitchenIds" = $${paramIndex++}`);
       params.push(JSON.stringify(kitIds));
       updates.push(`"kitchenId" = $${paramIndex++}`);
-      params.push(kitIds[0] || null);
+      params.push(kitIds.length > 0 ? kitIds[0] : null);
     } else if (kitchenId !== undefined) {
       updates.push(`"kitchenId" = $${paramIndex++}`);
       params.push(kitchenId || null);
     }
 
     // Handle cuisine IDs
-    if (cuisineIds !== undefined) {
-      const cuisIds = cuisineIds && cuisineIds.length > 0 ? cuisineIds : [];
+    if (cuisineIds !== undefined && cuisineIds !== null) {
+      const cuisIds = Array.isArray(cuisineIds) ? cuisineIds : [];
       updates.push(`"cuisineIds" = $${paramIndex++}`);
       params.push(JSON.stringify(cuisIds));
       updates.push(`"cuisineId" = $${paramIndex++}`);
-      params.push(cuisIds[0] || null);
+      params.push(cuisIds.length > 0 ? cuisIds[0] : null);
     } else if (cuisineId !== undefined) {
       updates.push(`"cuisineId" = $${paramIndex++}`);
       params.push(cuisineId || null);
@@ -358,7 +362,8 @@ const updateProduct = async (req, res, next) => {
       req.params.id,
     ]);
 
-    res.json(formatProduct(rowsToProducts(result.rows)[0]));
+    const formatted = formatProduct(rowsToProducts(result.rows)[0]);
+    res.json(formatted);
   } catch (err) {
     next(err);
   }
@@ -381,25 +386,58 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
-const formatProduct = (p) => ({
-  id: p.id,
-  name: p.name,
-  description: p.description ?? "",
-  price: p.price,
-  isFeatured: p.isFeatured,
-  isArchived: p.isArchived,
-  images: p.images,
-  category: p.category?.name ?? null,
-  categoryId: p.categoryId ?? null,
-  size: p.size?.name ?? null,
-  sizeId: p.sizeId ?? null,
-  kitchen: p.kitchen?.name ?? null,
-  kitchenId: p.kitchenId ?? null,
-  cuisine: p.cuisine?.name ?? null,
-  cuisineId: p.cuisineId ?? null,
-  createdAt: p.createdAt,
-  qty: 1,
-});
+const formatProduct = (p) => {
+  const safeJsonParse = (value) => {
+    if (!value) return [];
+
+    // If already an array, return it (pg client parses JSONB as objects)
+    if (Array.isArray(value)) {
+      return value.filter((v) => v !== null && v !== undefined);
+    }
+
+    // If it's an object but not an array, return empty array
+    if (typeof value === "object") {
+      return [];
+    }
+
+    // If it's a string, try to parse it
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // If not valid JSON, return empty array
+        return [];
+      }
+    }
+
+    return [];
+  };
+
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description ?? "",
+    price: p.price,
+    isFeatured: p.isFeatured,
+    isArchived: p.isArchived,
+    images: p.images,
+    category: p.category?.name ?? null,
+    categoryId: p.categoryId ?? null,
+    categoryIds: safeJsonParse(p.categoryIds),
+    size: p.size?.name ?? null,
+    sizeId: p.sizeId ?? null,
+    sizeIds: safeJsonParse(p.sizeIds),
+    kitchen: p.kitchen?.name ?? null,
+    kitchenId: p.kitchenId ?? null,
+    kitchenIds: safeJsonParse(p.kitchenIds),
+    cuisine: p.cuisine?.name ?? null,
+    cuisineId: p.cuisineId ?? null,
+    cuisineIds: safeJsonParse(p.cuisineIds),
+    createdAt: p.createdAt,
+    qty: 1,
+  };
+};
 
 module.exports = {
   getProducts,
