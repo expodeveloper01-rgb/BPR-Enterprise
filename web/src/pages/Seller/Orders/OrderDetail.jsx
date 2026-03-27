@@ -1,8 +1,5 @@
-import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import apiClient from "@/lib/api-client";
-import toast from "react-hot-toast";
 
 const statusColors = {
   pending: "bg-gray-50 text-gray-700",
@@ -12,28 +9,7 @@ const statusColors = {
   cancelled: "bg-red-50 text-red-700",
 };
 
-const OrderDetail = ({ order, onClose, onStatusUpdate }) => {
-  const [updating, setUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState(order.order_status || "pending");
-  const [statusMessage, setStatusMessage] = useState(order.statusMessage || "");
-
-  const handleStatusUpdate = async () => {
-    try {
-      setUpdating(true);
-      await apiClient.patch(`/orders/${order.id}`, {
-        status: newStatus,
-        statusMessage: statusMessage,
-      });
-      toast.success("Order status updated");
-      onStatusUpdate();
-      onClose();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update status");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
+const OrderDetail = ({ order, onClose }) => {
   const total = order.orderItems.reduce(
     (sum, oi) => sum + (oi.product?.price ?? 0) * (oi.quantity ?? 1),
     0,
@@ -137,6 +113,38 @@ const OrderDetail = ({ order, onClose, onStatusUpdate }) => {
           </div>
 
           <hr />
+
+          {/* Rider Information */}
+          {order.rider ? (
+            <>
+              <div>
+                <h3 className="font-semibold text-neutral-800 mb-3">
+                  Rider Information
+                </h3>
+                <div className="space-y-2 text-sm text-neutral-700">
+                  <p>
+                    <strong>Name:</strong> {order.rider.name}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {order.rider.phone}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {order.rider.email}
+                  </p>
+                  <p>
+                    <strong>Rating:</strong> {order.rider.rating}⭐
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Delivery Status:</strong>{" "}
+                    {order.delivery_status?.charAt(0).toUpperCase() +
+                      order.delivery_status?.slice(1) || "Pending"}
+                  </p>
+                </div>
+              </div>
+
+              <hr />
+            </>
+          ) : null}
 
           {/* Order Items */}
           <div>
@@ -271,69 +279,14 @@ const OrderDetail = ({ order, onClose, onStatusUpdate }) => {
             </>
           )}
 
-          {/* Status Update */}
-          <div>
-            <label className="text-xs font-semibold text-neutral-600 uppercase block mb-2">
-              Update Order Status
-            </label>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-              disabled={updating}
-            >
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <p className="text-xs text-muted-foreground mt-2">
-              Current:{" "}
-              <span className="font-semibold">
-                {order.order_status || "pending"}
-              </span>
-            </p>
-
-            {/* Status Message */}
-            <div className="mt-4">
-              <label className="text-xs font-semibold text-neutral-600 uppercase block mb-2">
-                Status Message (Optional)
-              </label>
-              <textarea
-                value={statusMessage}
-                onChange={(e) => setStatusMessage(e.target.value)}
-                placeholder="Add a message for the customer (e.g., 'Order is being prepared in the kitchen')"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 resize-none"
-                rows="3"
-                disabled={updating}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {statusMessage.length}/200
-              </p>
-            </div>
-          </div>
-
           {/* Actions */}
           <div className="flex gap-3 pt-4">
             <Button
               onClick={onClose}
-              variant="outline"
-              className="flex-1"
-              disabled={updating}
+              className="w-full bg-black text-white hover:bg-black/80"
             >
               Close
             </Button>
-            {newStatus !== (order.order_status || "pending") && (
-              <Button
-                onClick={handleStatusUpdate}
-                className="flex-1 bg-black text-white hover:bg-black/80"
-                disabled={updating}
-              >
-                {updating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Update Status
-              </Button>
-            )}
           </div>
         </div>
       </div>

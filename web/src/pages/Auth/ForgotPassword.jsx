@@ -30,16 +30,21 @@ const ForgotPasswordPage = () => {
       {/* Background gradient blur */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#ff1493/08,transparent_60%)]" />
 
-      <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-8 items-center">
-        {/* Logo */}
+      <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-16 items-center">
+        {/* Logo - Left side */}
         <div className="hidden md:flex flex-col items-center justify-center">
-          <img src={logo} alt="logo" className="w-50" />
+          <img src={logo} alt="logo" className="w-82" />
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 space-y-6 shadow-lg">
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold text-gray-900">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-lg">
+          {/* Logo - Mobile */}
+          <div className="flex justify-center mb-1 md:hidden">
+            <img src={logo} alt="logo" className="w-20" />
+          </div>
+
+          <div className="space-y-1.5 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">
               Forgot password?
             </h1>
             <p className="text-gray-600">
@@ -85,13 +90,13 @@ const ForgotPasswordPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all"
+                className="w-full h-10 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-sm transition-all"
                 disabled={loading}
               >
                 {loading ? "Sending link…" : "Send reset link"}

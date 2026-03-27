@@ -84,14 +84,18 @@ export default function CheckoutPage() {
           phone,
           address,
         });
-        setOrderId(data.orderId);
+        // Handle both orderIds array (new) and orderId (old, backward compatible)
+        const ids = data.orderIds || (data.orderId ? [data.orderId] : []);
+        setOrderId(ids.length > 1 ? `${ids.length} orders` : ids[0]);
       } else {
         const { data } = await apiClient.post("/checkout/bank-transfer", {
           phone,
           address,
           referenceNumber: refNumber,
         });
-        setOrderId(data.orderId);
+        // Handle both orderIds array (new) and orderId (old, backward compatible)
+        const ids = data.orderIds || (data.orderId ? [data.orderId] : []);
+        setOrderId(ids.length > 1 ? `${ids.length} orders` : ids[0]);
       }
       cart.removeAll();
       setSuccess(true);

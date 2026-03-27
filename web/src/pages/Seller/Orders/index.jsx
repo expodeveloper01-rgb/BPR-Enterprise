@@ -32,6 +32,22 @@ const SellerOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Refetch every 6 seconds to show real-time status updates
+    const interval = setInterval(fetchOrders, 6000);
+
+    // Refetch when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchOrders();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [selectedKitchenId]);
 
   return (
@@ -66,11 +82,14 @@ const SellerOrders = () => {
                   <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">
                     Customer
                   </th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">
+                  <th className="px-4 py-3 font-medium text-neutral-600">
                     Items
                   </th>
                   <th className="px-4 py-3 font-medium text-neutral-600">
-                    Status
+                    Order Status
+                  </th>
+                  <th className="px-4 py-3 font-medium text-neutral-600">
+                    Payment
                   </th>
                   <th className="px-4 py-3 font-medium text-neutral-600 hidden lg:table-cell">
                     Date
@@ -109,8 +128,17 @@ const SellerOrders = () => {
                           {order.user?.email ?? ""}
                         </p>
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <p className="text-neutral-700">
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium text-neutral-700 line-clamp-2">
+                          {order.orderItems
+                            .map((oi) =>
+                              oi.size
+                                ? `${oi.product?.name} (${oi.size.name})`
+                                : oi.product?.name,
+                            )
+                            .join(", ")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {order.orderItems.length} item
                           {order.orderItems.length !== 1 ? "s" : ""}
                         </p>
@@ -122,9 +150,34 @@ const SellerOrders = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                            order.order_status?.toLowerCase() === "processing"
+                              ? "bg-blue-50 text-blue-700"
+                              : order.order_status?.toLowerCase() === "shipped"
+                                ? "bg-yellow-50 text-yellow-700"
+                                : order.order_status?.toLowerCase() ===
+                                    "in-transit"
+                                  ? "bg-yellow-50 text-yellow-700"
+                                  : order.order_status?.toLowerCase() ===
+                                      "delivered"
+                                    ? "bg-green-50 text-green-700"
+                                    : order.order_status?.toLowerCase() ===
+                                        "cancelled"
+                                      ? "bg-red-50 text-red-700"
+                                      : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {order.order_status
+                            ? order.order_status.charAt(0).toUpperCase() +
+                              order.order_status.slice(1).toLowerCase()
+                            : "Pending"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
                           className={`text-xs font-semibold px-2.5 py-1 rounded-full ${order.isPaid ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"}`}
                         >
-                          {order.isPaid ? "Paid" : "Pending"}
+                          {order.isPaid ? "Paid" : "Unpaid"}
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">

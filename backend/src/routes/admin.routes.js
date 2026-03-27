@@ -136,14 +136,17 @@ router.get("/orders", protect, requireAdmin, async (req, res, next) => {
       `
       SELECT DISTINCT o.id, o."userId", o."isPaid", o.phone, o.address, 
         o."paymentMethod", o."referenceNumber", o."order_status", o."statusMessage", o."statusHistory",
+        o."riderId", o.delivery_status,
         o."createdAt", o."updatedAt",
         u.id AS u_id, u.name AS u_name, u.email AS u_email,
+        r.id AS r_id, r.name AS r_name, r.email AS r_email, r.phone AS r_phone, r.rating AS r_rating,
         oi.id AS oi_id, oi.quantity, oi."productId", oi."sizeId",
         p.id AS p_id, p.name AS p_name, p.price AS p_price,
         s.id AS s_id, s.name AS s_name,
         img.id AS img_id, img.url AS img_url
       FROM "Order" o
       LEFT JOIN "User" u ON o."userId" = u.id
+      LEFT JOIN "Rider" r ON o."riderId" = r.id
       LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
       LEFT JOIN "Product" p ON oi."productId" = p.id
       LEFT JOIN "Size" s ON oi."sizeId" = s.id
@@ -170,6 +173,7 @@ router.get("/orders", protect, requireAdmin, async (req, res, next) => {
           address: row.address,
           paymentMethod: row.paymentMethod,
           referenceNumber: row.referenceNumber,
+          delivery_status: row.delivery_status,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           recipientName: row.u_name || "Guest",
@@ -180,6 +184,15 @@ router.get("/orders", protect, requireAdmin, async (req, res, next) => {
           shippingFee: 0,
           user: row.u_id
             ? { id: row.u_id, name: row.u_name, email: row.u_email }
+            : null,
+          rider: row.r_id
+            ? {
+                id: row.r_id,
+                name: row.r_name,
+                email: row.r_email,
+                phone: row.r_phone,
+                rating: row.r_rating,
+              }
             : null,
           itemsMap: new Map(),
         });

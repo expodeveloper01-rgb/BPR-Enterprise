@@ -30,12 +30,12 @@ const AuthHeader = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-300 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 py-0 flex items-center justify-between">
         <Link to="/" className="flex items-center shrink-0">
           <img
             src={currentBrand.logo}
             alt={currentBrand.name}
-            className="h-14 w-14"
+            className="h-16 w-16"
           />
         </Link>
         <div className="text-sm text-gray-600">

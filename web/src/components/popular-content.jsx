@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import useAuth from "@/hooks/use-auth";
@@ -7,6 +7,9 @@ import toast from "react-hot-toast";
 export const PopularContent = ({ data }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isDiomedes = pathname.startsWith("/diomedes");
+  const store = isDiomedes ? "diomedes" : "uncle-brew";
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -16,14 +19,14 @@ export const PopularContent = ({ data }) => {
       return;
     }
     // Navigate to product details where they can select size
-    navigate(`/uncle-brew/menu/${data.id}`);
+    navigate(`/${store}/menu/${data.id}`);
   };
 
   return (
     <div className="group bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image */}
       <Link
-        to={`/uncle-brew/menu/${data.id}`}
+        to={`/${store}/menu/${data.id}`}
         className="block relative overflow-hidden bg-gray-50 aspect-square"
       >
         <img
@@ -60,7 +63,7 @@ export const PopularContent = ({ data }) => {
           )}
         </div> */}
 
-        <Link to={`/uncle-brew/menu/${data.id}`}>
+        <Link to={`/${store}/menu/${data.id}`}>
           <h3 className="font-semibold text-sm text-neutral-800 leading-snug hover:underline line-clamp-2">
             {data.name}
           </h3>
@@ -76,7 +79,7 @@ export const PopularContent = ({ data }) => {
           <span className="text-base font-bold text-neutral-900">
             ₱{Number(data.price).toLocaleString()}
           </span>
-          <Link to={`/uncle-brew/menu/${data.id}`}>
+          <Link to={`/${store}/menu/${data.id}`}>
             <Button
               size="sm"
               className="rounded-full bg-black text-white hover:bg-black/80 px-3 text-xs h-7"

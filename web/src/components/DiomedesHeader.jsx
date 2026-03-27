@@ -83,7 +83,7 @@ const DiomedesHeader = () => {
                 Shop
               </Link>
               <Link
-                to="/diomedes/orders"
+                to="/orders"
                 className="text-base font-medium text-neutral-700 hover:text-amber-600 transition-colors"
               >
                 Orders
@@ -136,7 +136,7 @@ const DiomedesHeader = () => {
                         </Link>
                       )}
                       <Link
-                        to="/diomedes/orders"
+                        to="/orders"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-amber-50 transition-colors"
                       >
@@ -201,7 +201,7 @@ const DiomedesHeader = () => {
             {[
               { to: "/diomedes", label: "Home" },
               { to: "/diomedes/menu", label: "Menu" },
-              { to: "/diomedes/orders", label: "Orders" },
+              { to: "/orders", label: "Orders" },
               { to: "/diomedes/about", label: "About" },
               { to: "/diomedes/contact", label: "Contact" },
             ]

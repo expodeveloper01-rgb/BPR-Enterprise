@@ -5,15 +5,17 @@ const getOrders = async (req, res, next) => {
     const result = await query(
       `
       SELECT
-        o.id AS "orderId", o."isPaid", o.phone, o.address, o.order_status, o."statusMessage", o."statusHistory", o."createdAt", o."updatedAt", o."userId",
+        o.id AS "orderId", o."isPaid", o.phone, o.address, o.order_status, o."statusMessage", o."statusHistory", o."delivery_status", o."riderId",
         oi.id AS "oi_id", oi.quantity, oi."sizeId",
-        p.id AS "p_id", p.name AS "p_name", p.price AS "p_price",
+        p.id AS "p_id", p.name AS "p_name", p.price AS "p_price", p."kitchenId",
         s.id AS "s_id", s.name AS "s_name",
+        r.id AS "r_id", r.name AS "r_name", r.email AS "r_email", r.phone AS "r_phone", r.rating AS "r_rating",
         img.id AS "img_id", img.url AS "img_url"
       FROM "Order" o
       LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
       LEFT JOIN "Product" p ON oi."productId" = p.id
       LEFT JOIN "Size" s ON oi."sizeId" = s.id
+      LEFT JOIN "Rider" r ON o."riderId" = r.id
       LEFT JOIN "Image" img ON img."productId" = p.id AND img."createdAt" = (
         SELECT MIN("createdAt") FROM "Image" WHERE "productId" = p.id
       )
@@ -34,9 +36,19 @@ const getOrders = async (req, res, next) => {
           order_status: row.order_status,
           statusMessage: row.statusMessage,
           statusHistory: row.statusHistory || [],
+          delivery_status: row.delivery_status,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           userId: row.userId,
+          rider: row.r_id
+            ? {
+                id: row.r_id,
+                name: row.r_name,
+                email: row.r_email,
+                phone: row.r_phone,
+                rating: row.r_rating,
+              }
+            : null,
           itemsMap: new Map(),
         });
       }
@@ -50,6 +62,7 @@ const getOrders = async (req, res, next) => {
             name: row.p_name,
             price: row.p_price,
           },
+          kitchenId: row.kitchenId,
           size: row.s_id
             ? {
                 id: row.s_id,
@@ -78,9 +91,11 @@ const getOrders = async (req, res, next) => {
       order_status: o.order_status,
       statusMessage: o.statusMessage,
       statusHistory: o.statusHistory,
+      delivery_status: o.delivery_status,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
       userId: o.userId,
+      rider: o.rider,
       orderItems: Array.from(o.itemsMap.values()),
     }));
 
@@ -110,9 +125,9 @@ const updateOrderStatus = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    // Get current order to fetch statusHistory
+    // Get current order to fetch statusHistory and paymentMethod
     const currentOrder = await query(
-      `SELECT "statusHistory" FROM "Order" WHERE id = $1`,
+      `SELECT "statusHistory", "paymentMethod" FROM "Order" WHERE id = $1`,
       [id],
     );
 
@@ -130,10 +145,20 @@ const updateOrderStatus = async (req, res, next) => {
 
     history.push(newEntry);
 
+    // Auto-mark COD orders as paid when delivered
+    const shouldMarkPaid =
+      status === "delivered" && currentOrder.rows[0].paymentMethod === "cod";
+
     // Update order with new status and history
     const result = await query(
-      `UPDATE "Order" SET "order_status" = $1, "statusMessage" = $2, "statusHistory" = $3, "updatedAt" = NOW() WHERE id = $4 RETURNING *`,
-      [status, statusMessage || "", JSON.stringify(history), id],
+      `UPDATE "Order" SET "order_status" = $1, "statusMessage" = $2, "statusHistory" = $3, "isPaid" = $5, "updatedAt" = NOW() WHERE id = $4 RETURNING *`,
+      [
+        status,
+        statusMessage || "",
+        JSON.stringify(history),
+        id,
+        shouldMarkPaid,
+      ],
     );
 
     res.json({

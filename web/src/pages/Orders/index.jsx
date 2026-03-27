@@ -3,15 +3,20 @@ import useAuth from "@/hooks/use-auth";
 import getOrders from "@/actions/get-orders";
 import Container from "@/components/container";
 import { ChevronRight } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import PageContent from "./components/PageContent";
 import CustomerOrderDetail from "./components/CustomerOrderDetail";
 
 const OrdersPage = () => {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const isUncleBrew = pathname.startsWith("/uncle-brew");
+  const brandName = isUncleBrew ? "Uncle Brew" : "BeLaPaRi";
+  const brandHome = isUncleBrew ? "/uncle-brew" : "/";
 
   // Redirect to sign in if not authenticated
   if (!user) {
@@ -19,9 +24,30 @@ const OrdersPage = () => {
   }
 
   useEffect(() => {
-    getOrders()
-      .then(setOrders)
-      .finally(() => setLoading(false));
+    const fetchOrders = () => {
+      getOrders()
+        .then(setOrders)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    };
+
+    fetchOrders();
+
+    // Refetch every 6 seconds to show real-time status updates
+    const interval = setInterval(fetchOrders, 6000);
+
+    // Refetch when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchOrders();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [user]);
 
   return (
@@ -31,10 +57,10 @@ const OrdersPage = () => {
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
             <Link
-              to="/"
+              to={brandHome}
               className="flex items-center gap-1 hover:text-neutral-800 transition-colors font-medium"
             >
-              BeLaPaRi
+              {brandName}
             </Link>
             <ChevronRight className="w-4 h-4" />
             <span className="text-neutral-800 font-medium">My Orders</span>
@@ -63,7 +89,7 @@ const OrdersPage = () => {
                 Start shopping to place your first order
               </p>
               <Link
-                to="/"
+                to={brandHome}
                 className="inline-block mt-4 px-6 py-2 bg-black text-white rounded-lg hover:bg-black/80 transition-colors"
               >
                 Continue Shopping

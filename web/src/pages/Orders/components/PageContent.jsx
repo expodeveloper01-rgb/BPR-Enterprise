@@ -13,7 +13,37 @@ const PageContent = ({ orders, onViewDetail }) => {
       ? "diomedes"
       : "uncle-brew";
 
-  if (orders.length === 0) {
+  // Split orders by kitchen
+  const expandedOrders = orders.flatMap((order) => {
+    if (!order.orderItems || order.orderItems.length === 0) {
+      return [order];
+    }
+
+    // Group items by kitchenId
+    const itemsByKitchen = new Map();
+    for (const item of order.orderItems) {
+      const kitchenId = item.kitchenId || "unknown";
+      if (!itemsByKitchen.has(kitchenId)) {
+        itemsByKitchen.set(kitchenId, []);
+      }
+      itemsByKitchen.get(kitchenId).push(item);
+    }
+
+    // Create separate order card for each kitchen
+    if (itemsByKitchen.size === 1) {
+      // Single kitchen, return as-is
+      return [order];
+    } else {
+      // Multiple kitchens, create separate cards
+      return Array.from(itemsByKitchen.entries()).map(([kitchenId, items]) => ({
+        ...order,
+        orderItems: items,
+        _kitchenId: kitchenId, // Mark as split order for display purposes
+      }));
+    }
+  });
+
+  if (expandedOrders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center">
@@ -34,8 +64,12 @@ const PageContent = ({ orders, onViewDetail }) => {
 
   return (
     <div className="space-y-3">
-      {orders.map((order) => (
-        <OrderItem key={order.id} order={order} onViewDetail={onViewDetail} />
+      {expandedOrders.map((order, idx) => (
+        <OrderItem
+          key={`${order.id}-${order._kitchenId || idx}`}
+          order={order}
+          onViewDetail={onViewDetail}
+        />
       ))}
     </div>
   );

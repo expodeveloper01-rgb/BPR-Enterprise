@@ -38,7 +38,7 @@ const OtpInput = ({ value, onChange }) => {
   };
 
   return (
-    <div className="flex gap-3 justify-center">
+    <div className="flex gap-2 justify-center">
       {digits.map((d, i) => (
         <input
           key={i}
@@ -50,7 +50,7 @@ const OtpInput = ({ value, onChange }) => {
           onChange={() => {}}
           onKeyDown={(e) => handleKey(e, i)}
           onPaste={handlePaste}
-          className="w-12 h-14 text-center text-xl font-bold border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:border-pink-500 transition"
+          className="w-10 h-12 text-center text-lg font-bold border-2 border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:border-pink-500 transition"
         />
       ))}
     </div>
@@ -160,21 +160,21 @@ const SignUpPage = () => {
 
         <div className="relative w-full max-w-md">
           {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <img src={logo} alt="logo" className="w-40" />
+          <div className="flex justify-center mb-4">
+            <img src={logo} alt="logo" className="w-28" />
           </div>
 
           {/* Card */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 space-y-6 shadow-lg text-center">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-7 h-7 text-white" />
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-lg text-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center mx-auto mb-2">
+              <Mail className="w-6 h-6 text-white" />
             </div>
 
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-gray-900">
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold text-gray-900">
                 Check your inbox
               </h1>
-              <p className="text-gray-600">
+              <p className="text-xs text-gray-600">
                 We sent a 6-digit code to{" "}
                 <span className="font-semibold text-pink-600">
                   {pendingEmail}
@@ -182,11 +182,11 @@ const SignUpPage = () => {
               </p>
             </div>
 
-            <form onSubmit={handleVerify} className="space-y-6">
+            <form onSubmit={handleVerify} className="space-y-4">
               <OtpInput value={code} onChange={setCode} />
               <Button
                 type="submit"
-                className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all flex items-center justify-center gap-2"
+                className="w-full h-10 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-sm transition-all flex items-center justify-center gap-2"
                 disabled={loading || code.length < 6}
               >
                 {loading ? (
@@ -232,16 +232,21 @@ const SignUpPage = () => {
       {/* Background gradient blur */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ff1493/08,transparent_60%)]" />
 
-      <div className="relative w-full max-w-5xl grid md:grid-cols-2 gap-12 items-center">
-        {/* Logo */}
+      <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-16 items-center">
+        {/* Logo - Left side */}
         <div className="hidden md:flex flex-col items-center justify-center">
-          <img src={logo} alt="logo" className="w-50" />
+          <img src={logo} alt="logo" className="w-82" />
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-10 space-y-6 shadow-lg">
-          <div className="space-y-2 text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Create account</h1>
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-lg">
+          {/* Logo - Mobile */}
+          <div className="flex justify-center mb-1 md:hidden">
+            <img src={logo} alt="logo" className="w-24" />
+          </div>
+
+          <div className="space-y-1.5 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Create account</h1>
             <p className="text-gray-600">
               Already have an account?{" "}
               <Link
@@ -264,7 +269,7 @@ const SignUpPage = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
               />
             </div>
 
@@ -276,7 +281,7 @@ const SignUpPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
               />
             </div>
 
@@ -292,7 +297,7 @@ const SignUpPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min. 6 characters"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"
@@ -306,7 +311,7 @@ const SignUpPage = () => {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all flex items-center justify-center gap-2"
+              className="w-full h-10 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-sm transition-all flex items-center justify-center gap-2"
               disabled={loading}
             >
               {loading ? (

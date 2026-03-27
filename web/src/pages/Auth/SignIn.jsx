@@ -54,16 +54,21 @@ const SignInPage = () => {
       {/* Background gradient blur */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#ff1493/08,transparent_60%)]" />
 
-      <div className="relative w-full max-w-5xl grid md:grid-cols-2 gap-12 items-center">
-        {/* Logo */}
+      <div className="relative w-full max-w-4xl grid md:grid-cols-2 gap-16 items-center">
+        {/* Logo - Left side */}
         <div className="hidden md:flex flex-col items-center justify-center">
-          <img src={logo} alt="logo" className="w-50" />
+          <img src={logo} alt="logo" className="w-82" />
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-10 space-y-6 shadow-lg">
-          <div className="space-y-2 text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Sign in</h1>
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-lg">
+          {/* Logo - Mobile */}
+          <div className="flex justify-center mb-1 md:hidden">
+            <img src={logo} alt="logo" className="w-24" />
+          </div>
+
+          <div className="space-y-1.5 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Sign in</h1>
             <p className="text-gray-600">
               Don&apos;t have an account?{" "}
               <Link
@@ -99,7 +104,7 @@ const SignInPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"
@@ -122,7 +127,7 @@ const SignInPage = () => {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-base transition-all flex items-center justify-center gap-2"
+              className="w-full h-10 rounded-lg bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-600 hover:to-fuchsia-700 font-semibold text-sm transition-all flex items-center justify-center gap-2"
               disabled={loading}
             >
               {loading ? (

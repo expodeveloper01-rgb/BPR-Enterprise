@@ -11,7 +11,7 @@ const MainNav = ({ className, scrolled }) => {
     ? [
         { to: "/uncle-brew", label: "Home" },
         { to: "/uncle-brew/menu", label: "Menu" },
-        { to: "/uncle-brew/orders", label: "Orders" },
+        { to: "/orders", label: "Orders" },
         { to: "/uncle-brew/about", label: "About" },
         { to: "/uncle-brew/contact", label: "Contact" },
       ]
@@ -19,7 +19,7 @@ const MainNav = ({ className, scrolled }) => {
       ? [
           { to: "/diomedes", label: "Home" },
           { to: "/diomedes/menu", label: "Menu" },
-          { to: "/diomedes/orders", label: "Orders" },
+          { to: "/orders", label: "Orders" },
           { to: "/diomedes/about", label: "About" },
           { to: "/diomedes/contact", label: "Contact" },
         ]

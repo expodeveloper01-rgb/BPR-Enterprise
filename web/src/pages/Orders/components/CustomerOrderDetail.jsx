@@ -234,6 +234,34 @@ const CustomerOrderDetail = ({ order, onClose }) => {
             </div>
           </div>
 
+          {/* Rider Information */}
+          {order.rider ? (
+            <>
+              <hr />
+              <div>
+                <h3 className="font-semibold text-neutral-800 mb-3">
+                  Rider Information
+                </h3>
+                <div className="space-y-2 text-sm text-neutral-700">
+                  <p>
+                    <strong>Name:</strong> {order.rider.name}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {order.rider.phone}
+                  </p>
+                  <p>
+                    <strong>Rating:</strong> {order.rider.rating}⭐
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Delivery Status:</strong>{" "}
+                    {order.delivery_status?.charAt(0).toUpperCase() +
+                      order.delivery_status?.slice(1) || "Pending"}
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : null}
+
           {/* Close Button */}
           <div className="pt-4">
             <Button

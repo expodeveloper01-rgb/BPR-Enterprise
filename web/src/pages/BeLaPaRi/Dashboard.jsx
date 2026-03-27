@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import useAuth from "@/hooks/use-auth";
 import { useStore } from "@/context/StoreContext";
+import OrdersCard from "@/components/OrdersCard";
 import uncleLogo from "/assets/img/uncle-brew.png";
 import diomedesLogo from "/assets/img/diomedes-logo.png";
 import { ArrowRight } from "lucide-react";
@@ -65,6 +66,9 @@ const StoresDashboard = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="space-y-12">
+          {/* Active Orders Card - at the very top */}
+          <OrdersCard />
+
           {/* Welcome Section */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900">

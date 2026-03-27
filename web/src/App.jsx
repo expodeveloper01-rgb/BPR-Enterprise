@@ -43,6 +43,12 @@ import UncleBrewContact from "@/pages/Uncle/Contact";
 import DiomedesHomePage from "@/pages/Diomedes";
 import DiomedesAbout from "@/pages/Diomedes/About";
 import DiomedesContact from "@/pages/Diomedes/Contact";
+import RiderDashboard from "@/pages/Rider";
+import RiderDeliveries from "@/pages/Rider/Deliveries";
+import RiderDeliveryDetail from "@/pages/Rider/DeliveryDetail";
+import RiderProfile from "@/pages/Rider/Profile";
+import RiderAuth from "@/pages/Rider/Auth";
+import RiderHeader from "@/components/RiderHeader";
 import { useStore } from "@/context/StoreContext";
 import { BrandProvider } from "@/context/BrandContext";
 import { SellerProvider } from "@/context/SellerContext";
@@ -56,13 +62,16 @@ const ScrollToTop = () => {
 };
 
 const isSeller = (pathname) => pathname.startsWith("/seller");
+const isRider = (pathname) => pathname.startsWith("/rider");
 
 const isAuthRoute = (pathname) => {
   return (
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/sign-up") ||
     pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/reset-password")
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/rider/login") ||
+    pathname.startsWith("/rider/signup")
   );
 };
 
@@ -73,6 +82,7 @@ const isCheckoutOrCart = (pathname) => {
 function AppRoutes() {
   const { pathname } = useLocation();
   const seller = isSeller(pathname);
+  const rider = isRider(pathname);
   const authRoute = isAuthRoute(pathname);
 
   if (seller) {
@@ -98,6 +108,41 @@ function AppRoutes() {
           </Routes>
         </>
       </SellerProvider>
+    );
+  }
+
+  if (rider) {
+    const isRiderAuth =
+      pathname.includes("/rider/login") || pathname.includes("/rider/signup");
+
+    return (
+      <>
+        <ScrollToTop />
+        <Toaster position="top-center" />
+        {!isRiderAuth && <RiderHeader />}
+        <Routes>
+          <Route path="/rider" element={<RiderDashboard />} />
+          <Route path="/rider/login" element={<RiderAuth isSignUp={false} />} />
+          <Route path="/rider/signup" element={<RiderAuth isSignUp={true} />} />
+          <Route path="/rider/profile" element={<RiderProfile />} />
+          <Route
+            path="/rider/deliveries/pending"
+            element={<RiderDeliveries mode="pending" />}
+          />
+          <Route
+            path="/rider/deliveries/active"
+            element={<RiderDeliveries mode="active" />}
+          />
+          <Route
+            path="/rider/deliveries/history"
+            element={<RiderDeliveries mode="history" />}
+          />
+          <Route
+            path="/rider/deliveries/:orderId"
+            element={<RiderDeliveryDetail />}
+          />
+        </Routes>
+      </>
     );
   }
 
@@ -135,6 +180,7 @@ function AppRoutes() {
               element={<Navigate to="/checkout" replace />}
             />
             <Route path="/uncle-brew/orders" element={<OrdersPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
             <Route path="/uncle-brew/about" element={<AboutPage />} />
             <Route path="/uncle-brew/contact" element={<UncleBrewContact />} />
             <Route path="/diomedes" element={<DiomedesHomePage />} />

@@ -57,23 +57,43 @@ async function main() {
   const kitchens = await Promise.all([
     prisma.kitchen.upsert({
       where: { id: "kt-local" },
-      update: {},
-      create: { id: "kt-local", name: "Local", value: "local" },
+      update: { minOrderAmount: 100 },
+      create: {
+        id: "kt-local",
+        name: "Local",
+        value: "local",
+        minOrderAmount: 100,
+      },
     }),
     prisma.kitchen.upsert({
       where: { id: "kt-western" },
-      update: {},
-      create: { id: "kt-western", name: "Western", value: "western" },
+      update: { minOrderAmount: 150 },
+      create: {
+        id: "kt-western",
+        name: "Western",
+        value: "western",
+        minOrderAmount: 150,
+      },
     }),
     prisma.kitchen.upsert({
       where: { id: "kt-uncle-brew" },
-      update: {},
-      create: { id: "kt-uncle-brew", name: "Uncle Brew", value: "uncle-brew" },
+      update: { minOrderAmount: 150 },
+      create: {
+        id: "kt-uncle-brew",
+        name: "Uncle Brew",
+        value: "uncle-brew",
+        minOrderAmount: 150,
+      },
     }),
     prisma.kitchen.upsert({
       where: { id: "kt-diomedes" },
-      update: {},
-      create: { id: "kt-diomedes", name: "Diomedes", value: "diomedes" },
+      update: { minOrderAmount: 200 },
+      create: {
+        id: "kt-diomedes",
+        name: "Diomedes",
+        value: "diomedes",
+        minOrderAmount: 200,
+      },
     }),
   ]);
 
