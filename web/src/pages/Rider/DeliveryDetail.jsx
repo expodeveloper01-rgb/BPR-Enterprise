@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useRiderAuth from "@/hooks/use-rider-auth";
 import apiClient from "@/lib/api-client";
@@ -21,6 +21,8 @@ const DeliveryDetail = () => {
   const [statusTitle, setStatusTitle] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
+  const fetchDeliveryRef = useRef(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/rider/login");
@@ -36,6 +38,12 @@ const DeliveryDetail = () => {
         try {
           const res = await apiClient.get(`/rider/deliveries/${orderId}`, {
             headers: { Authorization: `Bearer ${token}` },
+          });
+
+          console.log("📦 Delivery fetched:", {
+            order_status: res.data.order_status,
+            delivery_status: res.data.delivery_status,
+            isPaid: res.data.isPaid,
           });
 
           setDelivery(res.data);
@@ -54,10 +62,11 @@ const DeliveryDetail = () => {
         }
       };
 
-      fetchDelivery();
+      // Store in ref so polling effect can call it
+      fetchDeliveryRef.current = fetchDelivery;
 
-      // Refetch every 4 seconds to show real-time status updates
-      const interval = setInterval(fetchDelivery, 4000);
+      // Initial fetch
+      fetchDelivery();
 
       // Refetch when page becomes visible
       const handleVisibilityChange = () => {
@@ -68,7 +77,6 @@ const DeliveryDetail = () => {
       document.addEventListener("visibilitychange", handleVisibilityChange);
 
       return () => {
-        clearInterval(interval);
         document.removeEventListener(
           "visibilitychange",
           handleVisibilityChange,
@@ -76,6 +84,21 @@ const DeliveryDetail = () => {
       };
     }
   }, [orderId, user, token, authLoading, navigate]);
+
+  // Separate polling effect that respects modal state
+  useEffect(() => {
+    if (!delivery || statusModal.open) {
+      return; // Don't poll while modal is open
+    }
+
+    const interval = setInterval(() => {
+      if (fetchDeliveryRef.current) {
+        fetchDeliveryRef.current();
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [delivery, statusModal.open]);
 
   const handleStatusUpdate = async (newStatus) => {
     // Get label for the new status
@@ -92,6 +115,16 @@ const DeliveryDetail = () => {
     setStatusModal({ open: true, newStatus });
   };
 
+  // Get the next status in the delivery flow
+  const getNextStatus = () => {
+    const statusFlow = ["pickup-pending", "in-transit", "delivered"];
+    const currentIndex = statusFlow.indexOf(delivery.delivery_status);
+    if (currentIndex === -1 || currentIndex >= statusFlow.length - 1) {
+      return null; // No next status
+    }
+    return statusFlow[currentIndex + 1];
+  };
+
   const handleConfirmStatusUpdate = async () => {
     setUpdating(true);
     try {
@@ -105,12 +138,58 @@ const DeliveryDetail = () => {
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      setDelivery(res.data.order);
+      // Handle both response formats:
+      // If wrapped with { message, order }: use res.data.order
+      // If returned directly: use res.data
+      const updatedOrder = res.data.order || res.data;
+
+      console.log("🔍 Updated order received:", {
+        order_status: updatedOrder.order_status,
+        delivery_status: updatedOrder.delivery_status,
+        isPaid: updatedOrder.isPaid,
+      });
+
+      setDelivery(updatedOrder);
       toast.success(`Status updated to ${statusTitle}`);
       setStatusModal({ open: false, newStatus: null });
 
+      // Wait a moment then force a refresh to ensure UI is in sync
+      setTimeout(async () => {
+        try {
+          const refreshRes = await apiClient.get(
+            `/rider/deliveries/${orderId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          console.log("🔄 Refresh after update:", {
+            order_status: refreshRes.data.order_status,
+            delivery_status: refreshRes.data.delivery_status,
+            isPaid: refreshRes.data.isPaid,
+          });
+          setDelivery(refreshRes.data);
+        } catch (err) {
+          console.error("Failed to refresh delivery:", err);
+        }
+      }, 500);
+
       if (statusModal.newStatus === "delivered") {
-        setTimeout(() => {
+        // Wait for backend to finish stats update, then check profile before navigating
+        setTimeout(async () => {
+          try {
+            console.log("📊 Checking rider profile before navigation...");
+            const profileRes = await apiClient.get("/rider/profile", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log("✅ Fresh profile from backend:", {
+              totalDeliveries: profileRes.data.totalDeliveries,
+              earnings: profileRes.data.earnings,
+            });
+          } catch (err) {
+            console.error("Failed to fetch profile before navigation:", err);
+          }
+
+          console.log("✅ Order delivered, navigating back to dashboard");
           navigate("/rider");
         }, 1500);
       }
@@ -137,20 +216,7 @@ const DeliveryDetail = () => {
     );
   }
 
-  const statusFlow = [
-    {
-      status: "pickup-pending",
-      label: "Pickup Pending",
-      action: "Ready to Pickup",
-    },
-    { status: "in-transit", label: "In Transit", action: "Pickup Done" },
-    { status: "delivered", label: "Delivered", action: "Mark as Delivered" },
-  ];
-
-  const currentStatusIndex = statusFlow.findIndex(
-    (s) => s.status === delivery.delivery_status,
-  );
-
+  // Main component render
   return (
     <Container className="px-4 md:px-12 py-10">
       {/* Header */}
@@ -237,59 +303,107 @@ const DeliveryDetail = () => {
             )}
           </div>
 
-          {/* Delivery Status Flow */}
+          {/* Current Delivery Status */}
           <div className="bg-white rounded-lg border border-gray-100 p-6">
-            <h2 className="text-lg font-bold text-neutral-900 mb-6">
+            <h2 className="text-lg font-bold text-neutral-900 mb-4">
               Delivery Status
             </h2>
-            <div className="space-y-3">
-              {statusFlow.map((step, i) => (
-                <button
-                  key={step.status}
-                  onClick={() => {
-                    if (i === currentStatusIndex) {
-                      handleStatusUpdate(
-                        statusFlow[i + 1]?.status || step.status,
-                      );
-                    }
-                  }}
-                  disabled={
-                    i > currentStatusIndex + 1 ||
-                    i < currentStatusIndex ||
-                    updating ||
-                    delivery.delivery_status === "delivered"
-                  }
-                  className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                    i < currentStatusIndex ||
-                    (i === currentStatusIndex &&
-                      delivery.delivery_status === "delivered")
-                      ? "border-green-500 bg-green-50"
-                      : i === currentStatusIndex
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-neutral-900">
-                        {step.label}
-                      </p>
-                      {i === currentStatusIndex &&
-                        delivery.delivery_status !== "delivered" && (
-                          <p className="text-xs text-blue-600 mt-1">
-                            {step.action}
-                          </p>
-                        )}
+            {delivery.statusHistory && delivery.statusHistory.length > 0 ? (
+              <div className="space-y-4">
+                {/* Current status */}
+                <div className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50">
+                  <p className="text-xs font-semibold text-blue-600 uppercase">
+                    Current Status
+                  </p>
+                  <p className="text-lg font-bold text-neutral-900 mt-2">
+                    {delivery.statusHistory[delivery.statusHistory.length - 1]
+                      ?.title ||
+                      delivery.statusHistory[delivery.statusHistory.length - 1]
+                        ?.status}
+                  </p>
+                  {delivery.statusHistory[delivery.statusHistory.length - 1]
+                    ?.message && (
+                    <p className="text-sm text-neutral-700 mt-2">
+                      {
+                        delivery.statusHistory[
+                          delivery.statusHistory.length - 1
+                        ].message
+                      }
+                    </p>
+                  )}
+                  {delivery.statusHistory[delivery.statusHistory.length - 1]
+                    ?.timestamp && (
+                    <p className="text-xs text-blue-600 mt-2">
+                      {new Date(
+                        delivery.statusHistory[
+                          delivery.statusHistory.length - 1
+                        ].timestamp,
+                      ).toLocaleString("en-PH", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        timeZone: "Asia/Manila",
+                        hour12: true,
+                      })}
+                    </p>
+                  )}
+                </div>
+
+                {/* Status history timeline */}
+                {delivery.statusHistory.length > 1 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-neutral-600 uppercase mb-3">
+                      History
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {delivery.statusHistory
+                        .slice()
+                        .reverse()
+                        .map((entry, idx) => (
+                          <div
+                            key={idx}
+                            className="flex gap-3 text-sm pb-2 border-b border-gray-100 last:border-0"
+                          >
+                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-neutral-600">
+                              {delivery.statusHistory.length - idx}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-neutral-900">
+                                {entry.title || entry.status}
+                              </p>
+                              {entry.message && (
+                                <p className="text-xs text-neutral-600 mt-0.5 line-clamp-2">
+                                  {entry.message}
+                                </p>
+                              )}
+                              <p className="text-xs text-neutral-500 mt-0.5">
+                                {new Date(entry.timestamp).toLocaleString(
+                                  "en-PH",
+                                  {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    timeZone: "Asia/Manila",
+                                    hour12: true,
+                                  },
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                     </div>
-                    {(i < currentStatusIndex ||
-                      (i === currentStatusIndex &&
-                        delivery.delivery_status === "delivered")) && (
-                      <span className="text-green-600">✓</span>
-                    )}
                   </div>
-                </button>
-              ))}
-            </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-neutral-600">No status updates yet</p>
+            )}
           </div>
         </div>
 
@@ -304,7 +418,9 @@ const DeliveryDetail = () => {
                   Method
                 </p>
                 <p className="text-neutral-900 mt-1">
-                  {delivery.isPaid ? "Paid Online" : "Cash on Delivery"}
+                  {delivery.paymentMethod === "cod"
+                    ? "Cash on Delivery"
+                    : "Paid Online"}
                 </p>
               </div>
               <div>
@@ -318,7 +434,7 @@ const DeliveryDetail = () => {
                       : "bg-yellow-50 text-yellow-700"
                   }`}
                 >
-                  {delivery.isPaid ? "Paid" : "Pending"}
+                  {delivery.isPaid ? "Received" : "Pending"}
                 </span>
               </div>
             </div>
@@ -351,14 +467,15 @@ const DeliveryDetail = () => {
                 </Button>
                 <Button
                   onClick={() => {
-                    const nextStatus =
-                      statusFlow[currentStatusIndex + 1]?.status;
+                    const nextStatus = getNextStatus();
                     if (nextStatus) {
                       handleStatusUpdate(nextStatus);
                     }
                   }}
                   disabled={
-                    currentStatusIndex === statusFlow.length - 1 || updating
+                    delivery.delivery_status === "delivered" ||
+                    !getNextStatus() ||
+                    updating
                   }
                   className="w-full bg-green-600 text-white hover:bg-green-700 rounded-lg"
                 >
@@ -379,29 +496,83 @@ const DeliveryDetail = () => {
             </h2>
 
             <div className="space-y-4">
-              {/* Status Title */}
+              {/* Current Status */}
               <div>
                 <label className="text-xs font-semibold text-neutral-600 uppercase block mb-2">
-                  Status Title
+                  Current Status
                 </label>
-                <input
-                  type="text"
-                  value={statusTitle}
-                  onChange={(e) => setStatusTitle(e.target.value)}
-                  placeholder="e.g., In Transit"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                />
+                <div className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                  {delivery?.delivery_status
+                    ?.split("-")
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(" ")}
+                </div>
+              </div>
+
+              {/* Status Selector - ONLY show statuses ahead in the flow */}
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 uppercase block mb-2">
+                  Update To Status
+                </label>
+                <div className="space-y-2">
+                  {["pickup-pending", "in-transit", "delivered"].map((s) => {
+                    const flowIndex = [
+                      "pickup-pending",
+                      "in-transit",
+                      "delivered",
+                    ].indexOf(s);
+                    const currentIndex = [
+                      "pickup-pending",
+                      "in-transit",
+                      "delivered",
+                    ].indexOf(delivery?.delivery_status);
+                    // Only allow statuses that are the same or ahead in the flow
+                    const isAllowed = flowIndex >= currentIndex;
+                    const isSelected = statusModal.newStatus === s;
+
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          if (isAllowed) {
+                            // Update statusModal to new status AND update statusTitle
+                            const labels = {
+                              "pickup-pending": "Pickup Pending",
+                              "in-transit": "In Transit",
+                              delivered: "Delivered",
+                            };
+                            setStatusModal({ ...statusModal, newStatus: s });
+                            setStatusTitle(labels[s]);
+                          }
+                        }}
+                        disabled={!isAllowed}
+                        className={`w-full px-3 py-2 border rounded-lg text-sm transition-colors ${
+                          isSelected
+                            ? "bg-black text-white border-black"
+                            : isAllowed
+                              ? "bg-white text-neutral-900 border-gray-200 hover:border-black/50"
+                              : "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed"
+                        }`}
+                      >
+                        {s
+                          .split("-")
+                          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                          .join(" ")}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Status Message */}
               <div>
                 <label className="text-xs font-semibold text-neutral-600 uppercase block mb-2">
-                  Message (Optional)
+                  Update Message (Optional)
                 </label>
                 <textarea
                   value={statusMessage}
                   onChange={(e) => setStatusMessage(e.target.value)}
-                  placeholder="Add a message for the customer (e.g., 'Arrived at your location')"
+                  placeholder="Add a message for the customer (e.g., 'Arrived at your location', 'Waiting for food preparation')"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 resize-none"
                   rows="3"
                 />
@@ -423,7 +594,7 @@ const DeliveryDetail = () => {
               </Button>
               <Button
                 onClick={handleConfirmStatusUpdate}
-                disabled={updating}
+                disabled={updating || !statusModal.newStatus}
                 className="flex-1 bg-black text-white hover:bg-black/80"
               >
                 {updating ? "Updating..." : "Confirm Update"}

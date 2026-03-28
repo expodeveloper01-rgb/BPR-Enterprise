@@ -18,6 +18,9 @@ const {
   createCuisine,
   updateCuisine,
   deleteCuisine,
+  getPendingConfirmationOrders,
+  confirmOrder,
+  rejectOrder,
 } = require("../controllers/admin.controller");
 
 // GET /api/v1/admin/stats
@@ -32,6 +35,11 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
       featuredProductsRes,
       archivedProductsRes,
       totalOrdersRes,
+      paidOrdersRes,
+      revenueRes,
+      pendingRevenueRes,
+      pendingOrdersRes,
+      kitchenSettingsRes,
       recentOrdersRes,
     ] = await Promise.all([
       query(`SELECT COUNT(*) as count FROM "Product" ${kitchenFilter}`, params),
@@ -43,7 +51,6 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
         `SELECT COUNT(*) as count FROM "Product" ${kitchenFilter ? kitchenFilter + " AND" : "WHERE"} "isArchived" = true`,
         params,
       ),
-      // Total orders (still global or filtered by kitchen products?)
       kitchen
         ? query(
             `SELECT COUNT(DISTINCT o.id) as count FROM "Order" o
@@ -53,6 +60,74 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
             params,
           )
         : query('SELECT COUNT(*) as count FROM "Order"', []),
+      // Count paid orders
+      kitchen
+        ? query(
+            `SELECT COUNT(DISTINCT o.id) as count FROM "Order" o
+             JOIN "OrderItem" oi ON oi."orderId" = o.id
+             JOIN "Product" p ON oi."productId" = p.id
+             WHERE p."kitchenId" = $1 AND o."isPaid" = true`,
+            params,
+          )
+        : query(
+            'SELECT COUNT(*) as count FROM "Order" WHERE "isPaid" = true',
+            [],
+          ),
+      // Total revenue (paid orders)
+      kitchen
+        ? query(
+            `SELECT COALESCE(SUM(p.price * oi.quantity), 0) as total FROM "OrderItem" oi
+             JOIN "Product" p ON oi."productId" = p.id
+             JOIN "Order" o ON oi."orderId" = o.id
+             WHERE p."kitchenId" = $1 AND o."isPaid" = true`,
+            params,
+          )
+        : query(
+            `SELECT COALESCE(SUM(p.price * oi.quantity), 0) as total FROM "OrderItem" oi
+             JOIN "Product" p ON oi."productId" = p.id
+             JOIN "Order" o ON oi."orderId" = o.id
+             WHERE o."isPaid" = true`,
+            [],
+          ),
+      // Pending revenue (unpaid orders)
+      kitchen
+        ? query(
+            `SELECT COALESCE(SUM(p.price * oi.quantity), 0) as total FROM "OrderItem" oi
+             JOIN "Product" p ON oi."productId" = p.id
+             JOIN "Order" o ON oi."orderId" = o.id
+             WHERE p."kitchenId" = $1 AND o."isPaid" = false AND o."order_status" != 'cancelled'`,
+            params,
+          )
+        : query(
+            `SELECT COALESCE(SUM(p.price * oi.quantity), 0) as total FROM "OrderItem" oi
+             JOIN "Product" p ON oi."productId" = p.id
+             JOIN "Order" o ON oi."orderId" = o.id
+             WHERE o."isPaid" = false AND o."order_status" != 'cancelled'`,
+            [],
+          ),
+      // Count pending confirmation orders
+      kitchen
+        ? query(
+            `SELECT COUNT(DISTINCT o.id) as count FROM "Order" o
+             JOIN "OrderItem" oi ON oi."orderId" = o.id
+             JOIN "Product" p ON oi."productId" = p.id
+             WHERE p."kitchenId" = $1 AND o."order_status" = 'pending_confirmation'`,
+            params,
+          )
+        : query(
+            'SELECT COUNT(*) as count FROM "Order" WHERE "order_status" = \'pending_confirmation\'',
+            [],
+          ),
+      // Get kitchen settings
+      kitchen
+        ? query(
+            'SELECT "minOrderAmount", "riderCommissionRate" FROM "Kitchen" WHERE id = $1',
+            params,
+          )
+        : query(
+            'SELECT null as "minOrderAmount", null as "riderCommissionRate"',
+            [],
+          ),
       // Recent orders with products
       kitchen
         ? query(
@@ -86,6 +161,21 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
     const featuredProducts = parseInt(featuredProductsRes.rows[0].count);
     const archivedProducts = parseInt(archivedProductsRes.rows[0].count);
     const totalOrders = parseInt(totalOrdersRes.rows[0].count);
+    const paidOrders = parseInt(paidOrdersRes.rows[0].count);
+    const totalRevenue = parseFloat(revenueRes.rows[0].total) || 0;
+    const pendingRevenue = parseFloat(pendingRevenueRes.rows[0].total) || 0;
+    const pendingOrders = parseInt(pendingOrdersRes.rows[0].count);
+    const kitchenSettings = kitchenSettingsRes.rows[0] || {
+      minOrderAmount: 100,
+      riderCommissionRate: 15,
+    };
+
+    // Calculate net revenue after rider commission deduction
+    const commissionRate = kitchenSettings.riderCommissionRate || 15;
+    const riderCommissionAmount = (totalRevenue * commissionRate) / 100;
+    const pendingCommissionAmount = (pendingRevenue * commissionRate) / 100;
+    const netRevenue = totalRevenue - riderCommissionAmount;
+    const netPendingRevenue = pendingRevenue - pendingCommissionAmount;
 
     // Format recent orders
     const recentOrdersMap = new Map();
@@ -118,6 +208,15 @@ router.get("/stats", protect, requireAdmin, async (req, res, next) => {
       featuredProducts,
       archivedProducts,
       totalOrders,
+      paidOrders,
+      totalRevenue,
+      netRevenue,
+      riderCommissionAmount,
+      pendingRevenue,
+      netPendingRevenue,
+      pendingCommissionAmount,
+      pendingOrders,
+      kitchenSettings,
       recentOrders,
     });
   } catch (err) {
@@ -228,6 +327,11 @@ router.get("/orders", protect, requireAdmin, async (req, res, next) => {
 
     const orders = Array.from(ordersMap.values()).map((o) => ({
       ...o,
+      statusHistory: Array.isArray(o.statusHistory)
+        ? o.statusHistory
+        : typeof o.statusHistory === "string"
+          ? JSON.parse(o.statusHistory)
+          : [],
       orderItems: Array.from(o.itemsMap.values()),
       itemsMap: undefined,
     }));
@@ -323,5 +427,15 @@ router.get("/cuisines", protect, requireAdmin, getCuisines);
 router.post("/cuisines", protect, requireAdmin, createCuisine);
 router.put("/cuisines/:id", protect, requireAdmin, updateCuisine);
 router.delete("/cuisines/:id", protect, requireAdmin, deleteCuisine);
+
+// ============ ORDER CONFIRMATION ============
+router.get(
+  "/orders/pending-confirmation",
+  protect,
+  requireAdmin,
+  getPendingConfirmationOrders,
+);
+router.patch("/orders/:orderId/confirm", protect, requireAdmin, confirmOrder);
+router.patch("/orders/:orderId/reject", protect, requireAdmin, rejectOrder);
 
 module.exports = router;

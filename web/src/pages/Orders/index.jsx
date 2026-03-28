@@ -33,8 +33,8 @@ const OrdersPage = () => {
 
     fetchOrders();
 
-    // Refetch every 6 seconds to show real-time status updates
-    const interval = setInterval(fetchOrders, 6000);
+    // Refetch every 10 seconds to show real-time status updates
+    const interval = setInterval(fetchOrders, 10000);
 
     // Refetch when page becomes visible
     const handleVisibilityChange = () => {

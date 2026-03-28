@@ -1,5 +1,6 @@
 const Stripe = require("stripe");
 const { query } = require("../utils/prisma");
+const { getManilaTimeISO } = require("../utils/timezone");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -79,11 +80,13 @@ const handleWebhook = async (req, res, next) => {
 
       // Create one order per kitchen
       for (const [kitchenId, kitchenProductIds] of itemsByKitchen.entries()) {
+        const manilaTime = getManilaTimeISO();
+
         const orderResult = await query(
-          `INSERT INTO "Order" (id, "userId", "isPaid", "order_status", "delivery_status", "createdAt", "updatedAt")
-           VALUES (gen_random_uuid(), $1, true, 'Processing', 'pending', NOW(), NOW())
+          `INSERT INTO "Order" (id, "userId", "isPaid", "order_status", "delivery_status", "statusHistory", "createdAt", "updatedAt")
+           VALUES (gen_random_uuid(), $1, true, 'pending_confirmation', 'pending', $2, $3, $3)
            RETURNING id`,
-          [userId],
+          [userId, JSON.stringify([]), manilaTime],
         );
 
         const orderId = orderResult.rows[0].id;
@@ -92,8 +95,8 @@ const handleWebhook = async (req, res, next) => {
         for (const productId of kitchenProductIds) {
           await query(
             `INSERT INTO "OrderItem" (id, "orderId", "productId", "createdAt", "updatedAt")
-             VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())`,
-            [orderId, productId],
+             VALUES (gen_random_uuid(), $1, $2, $3, $3)`,
+            [orderId, productId, manilaTime],
           );
         }
       }
@@ -174,11 +177,13 @@ const createCODOrder = async (req, res, next) => {
     // Create one order per kitchen
     const orderIds = [];
     for (const [kitchenId, kitchenItems] of itemsByKitchen.entries()) {
+      const manilaTime = getManilaTimeISO();
+
       const orderResult = await query(
-        `INSERT INTO "Order" (id, "userId", "isPaid", phone, address, "paymentMethod", "order_status", "delivery_status", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, false, $2, $3, 'cod', 'Processing', 'pending', NOW(), NOW())
+        `INSERT INTO "Order" (id, "userId", "isPaid", phone, address, "paymentMethod", "order_status", "delivery_status", "statusHistory", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, false, $2, $3, 'cod', 'pending_confirmation', 'pending', $4, $5, $5)
          RETURNING id`,
-        [userId, phone, address],
+        [userId, phone, address, JSON.stringify([]), manilaTime],
       );
 
       const orderId = orderResult.rows[0].id;
@@ -188,8 +193,14 @@ const createCODOrder = async (req, res, next) => {
       for (const item of kitchenItems) {
         await query(
           `INSERT INTO "OrderItem" (id, "orderId", "productId", "sizeId", quantity, "createdAt", "updatedAt")
-           VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
-          [orderId, item.productId, item.sizeId || null, item.quantity],
+           VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $5)`,
+          [
+            orderId,
+            item.productId,
+            item.sizeId || null,
+            item.quantity,
+            manilaTime,
+          ],
         );
       }
     }
@@ -274,11 +285,20 @@ const createBankTransferOrder = async (req, res, next) => {
     // Create one order per kitchen
     const orderIds = [];
     for (const [kitchenId, kitchenItems] of itemsByKitchen.entries()) {
+      const manilaTime = getManilaTimeISO();
+
       const orderResult = await query(
-        `INSERT INTO "Order" (id, "userId", "isPaid", phone, address, "paymentMethod", "referenceNumber", "order_status", "delivery_status", "createdAt", "updatedAt")
-         VALUES (gen_random_uuid(), $1, false, $2, $3, 'bank_transfer', $4, 'Pending Payment Verification', 'pending', NOW(), NOW())
+        `INSERT INTO "Order" (id, "userId", "isPaid", phone, address, "paymentMethod", "referenceNumber", "order_status", "delivery_status", "statusHistory", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, false, $2, $3, 'bank_transfer', $4, 'pending_confirmation', 'pending', $5, $6, $6)
          RETURNING id`,
-        [userId, phone, address, referenceNumber.trim()],
+        [
+          userId,
+          phone,
+          address,
+          referenceNumber.trim(),
+          JSON.stringify([]),
+          manilaTime,
+        ],
       );
 
       const orderId = orderResult.rows[0].id;
@@ -288,8 +308,14 @@ const createBankTransferOrder = async (req, res, next) => {
       for (const item of kitchenItems) {
         await query(
           `INSERT INTO "OrderItem" (id, "orderId", "productId", "sizeId", quantity, "createdAt", "updatedAt")
-           VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
-          [orderId, item.productId, item.sizeId || null, item.quantity],
+           VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $5)`,
+          [
+            orderId,
+            item.productId,
+            item.sizeId || null,
+            item.quantity,
+            manilaTime,
+          ],
         );
       }
     }

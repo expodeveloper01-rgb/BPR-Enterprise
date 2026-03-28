@@ -10,7 +10,12 @@ const SellerKitchens = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    minOrderAmount: 100,
+    riderCommissionRate: 15,
+  });
 
   useEffect(() => {
     loadKitchens();
@@ -55,7 +60,12 @@ const SellerKitchens = () => {
 
   const handleEdit = (kitchen) => {
     setEditingId(kitchen.id);
-    setFormData({ name: kitchen.name, description: kitchen.description || "" });
+    setFormData({
+      name: kitchen.name,
+      description: kitchen.description || "",
+      minOrderAmount: kitchen.minOrderAmount || 100,
+      riderCommissionRate: kitchen.riderCommissionRate || 15,
+    });
     setShowForm(true);
   };
 
@@ -73,7 +83,12 @@ const SellerKitchens = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormData({ name: "", description: "" });
+    setFormData({
+      name: "",
+      description: "",
+      minOrderAmount: 100,
+      riderCommissionRate: 15,
+    });
   };
 
   return (
@@ -137,6 +152,47 @@ const SellerKitchens = () => {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm resize-none"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Min Order Amount (₱) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={formData.minOrderAmount}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        minOrderAmount: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    placeholder="e.g., 100"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Rider Commission Rate (%) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={formData.riderCommissionRate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        riderCommissionRate: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    placeholder="e.g., 15"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                  />
+                </div>
+              </div>
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
@@ -190,8 +246,11 @@ const SellerKitchens = () => {
                   <th className="px-4 py-3 font-medium text-neutral-600">
                     Name
                   </th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 hidden md:table-cell">
-                    Description
+                  <th className="px-4 py-3 font-medium text-neutral-600 hidden lg:table-cell">
+                    Min Order (₱)
+                  </th>
+                  <th className="px-4 py-3 font-medium text-neutral-600 hidden lg:table-cell">
+                    Rider Commission (%)
                   </th>
                   <th className="px-4 py-3 font-medium text-neutral-600 text-right">
                     Actions
@@ -205,10 +264,17 @@ const SellerKitchens = () => {
                     className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 py-3 font-medium text-neutral-800">
-                      {kitchen.name}
+                      <div>{kitchen.name}</div>
+                      <div className="text-xs text-neutral-500 lg:hidden mt-1">
+                        Min: ₱{kitchen.minOrderAmount} | Commission:{" "}
+                        {kitchen.riderCommissionRate}%
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-neutral-600 hidden md:table-cell text-xs">
-                      {kitchen.description || "-"}
+                    <td className="px-4 py-3 text-neutral-600 hidden lg:table-cell text-sm">
+                      ₱{(kitchen.minOrderAmount || 100).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-600 hidden lg:table-cell text-sm">
+                      {(kitchen.riderCommissionRate || 15).toFixed(1)}%
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">

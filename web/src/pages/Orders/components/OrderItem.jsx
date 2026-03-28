@@ -1,12 +1,16 @@
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
+import { getLatestStatusTitle } from "@/lib/status-utils";
 
 const statusColors = {
   processing: "bg-orange-50 text-orange-700 border-orange-200",
   pending: "bg-gray-50 text-gray-700 border-gray-200",
+  "pickup-pending": "bg-blue-50 text-blue-700 border-blue-200",
   "in-transit": "bg-yellow-50 text-yellow-700 border-yellow-200",
   delivered: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-red-50 text-red-700 border-red-200",
+  confirmed: "bg-green-50 text-green-700 border-green-200",
+  pending_confirmation: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
 const OrderItem = ({ order, onViewDetail }) => {
@@ -84,18 +88,28 @@ const OrderItem = ({ order, onViewDetail }) => {
         <div className="mb-3 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
           <p className="text-xs text-blue-700">
             <span className="font-semibold">Latest Update:</span>{" "}
-            {order.statusHistory[order.statusHistory.length - 1]?.message ||
+            {order.statusHistory[order.statusHistory.length - 1]?.title ||
+              order.statusHistory[order.statusHistory.length - 1]?.message ||
               order.statusHistory[order.statusHistory.length - 1]?.status}
           </p>
+          {order.statusHistory[order.statusHistory.length - 1]?.message && (
+            <p className="text-xs text-blue-600 mt-1">
+              {order.statusHistory[order.statusHistory.length - 1]?.message}
+            </p>
+          )}
           {order.statusHistory[order.statusHistory.length - 1]?.timestamp && (
             <p className="text-xs text-blue-600 mt-1">
               {new Date(
                 order.statusHistory[order.statusHistory.length - 1].timestamp,
-              ).toLocaleDateString("en-PH", {
+              ).toLocaleString("en-PH", {
+                year: "numeric",
                 month: "short",
                 day: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
+                second: "2-digit",
+                timeZone: "Asia/Manila",
+                hour12: true,
               })}
             </p>
           )}
@@ -109,14 +123,12 @@ const OrderItem = ({ order, onViewDetail }) => {
           <span
             className={cn(
               "text-xs font-semibold px-2.5 py-1 rounded-full border",
-              statusColors[order.order_status?.toLowerCase()] ??
+              statusColors[order.delivery_status?.toLowerCase()] ||
+                statusColors[order.order_status?.toLowerCase()] ||
                 "bg-gray-100 text-gray-600 border-gray-200",
             )}
           >
-            {order.order_status
-              ? order.order_status.charAt(0).toUpperCase() +
-                order.order_status.slice(1).toLowerCase()
-              : "Unknown"}
+            {getLatestStatusTitle(order)}
           </span>
 
           {/* Payment status */}

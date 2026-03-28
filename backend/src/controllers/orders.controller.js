@@ -5,7 +5,7 @@ const getOrders = async (req, res, next) => {
     const result = await query(
       `
       SELECT
-        o.id AS "orderId", o."isPaid", o.phone, o.address, o.order_status, o."statusMessage", o."statusHistory", o."delivery_status", o."riderId",
+        o.id AS "orderId", o."userId", o."isPaid", o.phone, o.address, o.order_status, o."statusMessage", o."statusHistory", o."delivery_status", o."riderId", o."createdAt", o."updatedAt",
         oi.id AS "oi_id", oi.quantity, oi."sizeId",
         p.id AS "p_id", p.name AS "p_name", p.price AS "p_price", p."kitchenId",
         s.id AS "s_id", s.name AS "s_name",
@@ -90,7 +90,11 @@ const getOrders = async (req, res, next) => {
       address: o.address,
       order_status: o.order_status,
       statusMessage: o.statusMessage,
-      statusHistory: o.statusHistory,
+      statusHistory: Array.isArray(o.statusHistory)
+        ? o.statusHistory
+        : typeof o.statusHistory === "string"
+          ? JSON.parse(o.statusHistory)
+          : [],
       delivery_status: o.delivery_status,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,

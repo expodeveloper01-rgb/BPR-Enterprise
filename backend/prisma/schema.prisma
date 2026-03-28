@@ -49,6 +49,7 @@ model Kitchen {
   name           String
   value          String
   minOrderAmount Float     @default(100) // Minimum order amount in PHP
+  riderCommissionRate Float     @default(15) // Rider commission percentage (0-100)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -108,18 +109,20 @@ model Image {
 }
 
 model Order {
-  id              String   @id @default(cuid())
-  isPaid          Boolean  @default(false)
-  phone           String   @default("")
-  address         String   @default("")
-  order_status    String   @default("Processing")
-  statusMessage   String   @default("")
-  statusHistory   Json     @default("[]")
-  paymentMethod   String   @default("cod")
-  referenceNumber String   @default("")
-  delivery_status String   @default("pending")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  isPaid                Boolean  @default(false)
+  phone                 String   @default("")
+  address               String   @default("")
+  order_status          String   @default("pending_confirmation")
+  statusMessage         String   @default("")
+  statusHistory         Json     @default("[]")
+  paymentMethod         String   @default("cod")
+  referenceNumber       String   @default("")
+  delivery_status       String   @default("pending")
+  sellerConfirmedAt     DateTime?
+  sellerConfirmationNote String   @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   user       User        @relation(fields: [userId], references: [id])
   userId     String

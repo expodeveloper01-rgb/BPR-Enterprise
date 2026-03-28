@@ -13,6 +13,10 @@ const RiderDeliveries = ({ mode = "pending" }) => {
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(null);
+  const [acceptingOrderId, setAcceptingOrderId] = useState(null);
+  const [acceptStatusTitle, setAcceptStatusTitle] = useState("Pickup Pending");
+  const [acceptStatusMessage, setAcceptStatusMessage] = useState("");
+  const [isCustomStatus, setIsCustomStatus] = useState(false);
 
   const modeConfig = {
     pending: {
@@ -82,8 +86,8 @@ const RiderDeliveries = ({ mode = "pending" }) => {
       await apiClient.post(
         `/rider/deliveries/${orderId}/accept`,
         {
-          statusTitle: "Pickup Pending",
-          statusMessage: "",
+          statusTitle: acceptStatusTitle,
+          statusMessage: acceptStatusMessage,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -92,6 +96,10 @@ const RiderDeliveries = ({ mode = "pending" }) => {
 
       toast.success("Delivery accepted!");
       setDeliveries(deliveries.filter((d) => d.id !== orderId));
+      setAcceptingOrderId(null);
+      setAcceptStatusTitle("Pickup Pending");
+      setAcceptStatusMessage("");
+      setIsCustomStatus(false);
       navigate(`/rider/deliveries/${orderId}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to accept delivery");
@@ -192,31 +200,60 @@ const RiderDeliveries = ({ mode = "pending" }) => {
               <div className="flex items-center gap-3 mb-4 flex-wrap">
                 <span
                   className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    delivery.isPaid
-                      ? "bg-green-50 text-green-700"
-                      : "bg-yellow-50 text-yellow-700"
+                    delivery.paymentMethod === "cod"
+                      ? "bg-yellow-50 text-yellow-700"
+                      : "bg-green-50 text-green-700"
                   }`}
                 >
-                  {delivery.isPaid ? "Paid" : "COD"}
+                  {delivery.paymentMethod === "cod" ? "COD" : "Paid Online"}
                 </span>
-                {delivery.delivery_status && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
-                    {delivery.delivery_status.charAt(0).toUpperCase() +
-                      delivery.delivery_status.slice(1)}
-                  </span>
-                )}
+                {(() => {
+                  // Get latest status title from history or use delivery_status
+                  let statusDisplay = delivery.delivery_status;
+
+                  if (
+                    delivery.statusHistory &&
+                    Array.isArray(delivery.statusHistory) &&
+                    delivery.statusHistory.length > 0
+                  ) {
+                    const latestStatus =
+                      delivery.statusHistory[delivery.statusHistory.length - 1];
+                    if (latestStatus.title) {
+                      statusDisplay = latestStatus.title;
+                    } else if (latestStatus.status) {
+                      statusDisplay = latestStatus.status;
+                    }
+                  }
+
+                  return (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+                      {statusDisplay === "in-transit"
+                        ? "In Transit"
+                        : statusDisplay === "pickup-pending"
+                          ? "Pickup Pending"
+                          : statusDisplay === "delivered"
+                            ? "Delivered"
+                            : statusDisplay
+                                ?.split("-")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() +
+                                    word.slice(1),
+                                )
+                                .join(" ") || "Pending"}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Action Button */}
               {config.allowAccept ? (
                 <Button
-                  onClick={() => handleAcceptDelivery(delivery.id)}
-                  disabled={accepting === delivery.id}
+                  onClick={() => setAcceptingOrderId(delivery.id)}
+                  disabled={accepting !== null}
                   className="w-full bg-black text-white hover:bg-black/80 rounded-lg"
                 >
-                  {accepting === delivery.id
-                    ? "Accepting..."
-                    : "Accept Delivery"}
+                  {accepting !== null ? "Processing..." : "Accept Delivery"}
                 </Button>
               ) : (
                 <Button
@@ -229,6 +266,82 @@ const RiderDeliveries = ({ mode = "pending" }) => {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Accept Delivery Modal */}
+      {acceptingOrderId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-neutral-800 mb-4">
+              Customize Pickup Status
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Status Title
+                </label>
+                <select
+                  value={isCustomStatus ? "custom" : acceptStatusTitle}
+                  onChange={(e) => {
+                    if (e.target.value === "custom") {
+                      setIsCustomStatus(true);
+                      setAcceptStatusTitle("");
+                    } else {
+                      setIsCustomStatus(false);
+                      setAcceptStatusTitle(e.target.value);
+                    }
+                  }}
+                  className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="Pickup Pending">Pickup Pending</option>
+                  <option value="On the way">On the way to pickup</option>
+                  <option value="custom">Custom...</option>
+                </select>
+                {isCustomStatus && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom status title"
+                    value={acceptStatusTitle}
+                    onChange={(e) => setAcceptStatusTitle(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg p-2 text-sm mt-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    autoFocus
+                  />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Message to Customer (optional)
+                </label>
+                <textarea
+                  value={acceptStatusMessage}
+                  onChange={(e) => setAcceptStatusMessage(e.target.value)}
+                  placeholder="e.g., I'm on the way to pick up your order"
+                  className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-20"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setAcceptingOrderId(null);
+                  setAcceptStatusTitle("Pickup Pending");
+                  setAcceptStatusMessage("");
+                  setIsCustomStatus(false);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAcceptDelivery(acceptingOrderId)}
+                disabled={!acceptStatusTitle.trim()}
+                className="flex-1 px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-black/80 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Accept
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </Container>

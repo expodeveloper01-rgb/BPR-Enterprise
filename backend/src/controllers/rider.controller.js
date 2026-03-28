@@ -1,7 +1,8 @@
 const { query } = require("../utils/prisma");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { sendVerificationEmail } = require("../utils/email");
+const { sendRiderVerificationEmail } = require("../utils/email");
+const { getManilaTimeISO } = require("../utils/timezone");
 
 // Generate verification code
 const generateVerificationCode = () => {
@@ -47,7 +48,7 @@ const registerRider = async (req, res, next) => {
     const rider = result.rows[0];
 
     // Send verification email
-    await sendVerificationEmail(email, name, verifyCode);
+    await sendRiderVerificationEmail(email, name, verifyCode);
 
     res.status(201).json({
       message:
@@ -194,6 +195,12 @@ const getRiderProfile = async (req, res, next) => {
       return res.status(404).json({ message: "Rider not found" });
     }
 
+    console.log("👤 getRiderProfile - Returning stats:", {
+      name: result.rows[0].name,
+      totalDeliveries: result.rows[0].totalDeliveries,
+      earnings: result.rows[0].earnings,
+    });
+
     res.json(result.rows[0]);
   } catch (err) {
     next(err);
@@ -206,7 +213,7 @@ const getPendingDeliveries = async (req, res, next) => {
     const result = await query(
       `SELECT 
         o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status,
-        o."isPaid", o."createdAt", o."updatedAt",
+        o."isPaid", o."paymentMethod", o."createdAt", o."updatedAt",
         u.name AS "userName", u.email AS "userEmail",
         COALESCE(SUM(p.price * oi.quantity), 0) AS "total",
         json_agg(json_build_object(
@@ -219,8 +226,8 @@ const getPendingDeliveries = async (req, res, next) => {
        JOIN "User" u ON o."userId" = u.id
        LEFT JOIN "OrderItem" oi ON o.id = oi."orderId"
        LEFT JOIN "Product" p ON oi."productId" = p.id
-       WHERE o.delivery_status = 'pending' AND o."riderId" IS NULL
-       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."createdAt", o."updatedAt", u.id, u.name, u.email
+       WHERE o.delivery_status = 'pending' AND o."riderId" IS NULL AND o.order_status = 'confirmed'
+       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."paymentMethod", o."createdAt", o."updatedAt", u.id, u.name, u.email
        ORDER BY o."createdAt" DESC`,
     );
 
@@ -238,7 +245,7 @@ const getRiderDeliveries = async (req, res, next) => {
     const result = await query(
       `SELECT 
         o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status,
-        o."isPaid", o."createdAt", o."updatedAt",
+        o."isPaid", o."paymentMethod", o."statusHistory", o."createdAt", o."updatedAt",
         u.name AS "userName", u.email AS "userEmail",
         COALESCE(SUM(p.price * oi.quantity), 0) AS "total",
         json_agg(json_build_object(
@@ -252,7 +259,7 @@ const getRiderDeliveries = async (req, res, next) => {
        LEFT JOIN "OrderItem" oi ON o.id = oi."orderId"
        LEFT JOIN "Product" p ON oi."productId" = p.id
        WHERE o."riderId" = $1 AND o.delivery_status != 'delivered'
-       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."createdAt", o."updatedAt", u.id, u.name, u.email
+       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."paymentMethod", o."statusHistory", o."createdAt", o."updatedAt", u.id, u.name, u.email
        ORDER BY o."createdAt" ASC`,
       [riderId],
     );
@@ -288,16 +295,24 @@ const acceptDelivery = async (req, res, next) => {
       status: "pickup-pending",
       title: statusTitle,
       message: statusMessage,
-      timestamp: new Date().toISOString(),
+      timestamp: getManilaTimeISO(),
     });
 
     // Assign order to rider
+    const manilaTime = getManilaTimeISO();
     const result = await query(
       `UPDATE "Order" 
-       SET "riderId" = $1, delivery_status = $2, "statusHistory" = $3, "updatedAt" = NOW() 
-       WHERE id = $4 
+       SET "riderId" = $1, delivery_status = $2, order_status = $3, "statusHistory" = $4, "updatedAt" = $5 
+       WHERE id = $6 
        RETURNING *`,
-      [riderId, "pickup-pending", JSON.stringify(statusHistory), orderId],
+      [
+        riderId,
+        "pickup-pending",
+        "Confirmed",
+        JSON.stringify(statusHistory),
+        manilaTime,
+        orderId,
+      ],
     );
 
     res.json({
@@ -315,6 +330,12 @@ const updateDeliveryStatus = async (req, res, next) => {
     const { orderId } = req.params;
     const { status, statusTitle, statusMessage = "" } = req.body;
     const riderId = req.user.id;
+
+    console.log("📦 updateDeliveryStatus called:", {
+      orderId,
+      status,
+      riderId,
+    });
 
     const validStatuses = [
       "pickup-pending",
@@ -344,32 +365,136 @@ const updateDeliveryStatus = async (req, res, next) => {
       status,
       title: statusTitle,
       message: statusMessage,
-      timestamp: new Date().toISOString(),
+      timestamp: getManilaTimeISO(),
     });
 
     // Map delivery_status to order_status for seller/customer views
-    let orderStatus = "Processing"; // default
+    const statusMap = {
+      "pickup-pending": "Confirmed",
+      "in-transit": "Dispatched",
+      delivered: "Delivered",
+      failed: "Cancelled",
+    };
+
+    let orderStatus = statusMap[status] || "Processing";
     let newIsPaid = orderResult.rows[0].isPaid || false; // keep existing isPaid value
 
     if (status === "delivered") {
-      orderStatus = "Delivered";
       newIsPaid = true; // Set to paid when delivered
-    } else if (status === "failed") {
-      orderStatus = "Cancelled";
     }
 
     // Update status and sync order_status + payment
-    const result = await query(
+    const manilaTime = getManilaTimeISO();
+    await query(
       `UPDATE "Order" 
-       SET delivery_status = $1, order_status = $2, "statusHistory" = $3, "isPaid" = $4, "updatedAt" = NOW() 
-       WHERE id = $5 
-       RETURNING *`,
-      [status, orderStatus, JSON.stringify(statusHistory), newIsPaid, orderId],
+       SET delivery_status = $1, order_status = $2, "statusHistory" = $3, "isPaid" = $4, "updatedAt" = $5 
+       WHERE id = $6`,
+      [
+        status,
+        orderStatus,
+        JSON.stringify(statusHistory),
+        newIsPaid,
+        manilaTime,
+        orderId,
+      ],
     );
+
+    // If delivery is complete, update rider stats
+    if (status === "delivered") {
+      try {
+        console.log(
+          "🎉 DELIVERY COMPLETED - Processing stats for rider:",
+          riderId,
+        );
+
+        // Get order total and kitchen commission rate
+        const orderTotalResult = await query(
+          `SELECT 
+            COALESCE(SUM(p.price * oi.quantity), 0) AS "total",
+            MAX(k."riderCommissionRate") AS "riderCommissionRate"
+           FROM "OrderItem" oi
+           LEFT JOIN "Product" p ON oi."productId" = p.id
+           LEFT JOIN "Kitchen" k ON p."kitchenId" = k.id
+           WHERE oi."orderId" = $1`,
+          [orderId],
+        );
+
+        console.log("📦 Full query result:", orderTotalResult.rows);
+        console.log("📦 Query result count:", orderTotalResult.rows.length);
+
+        if (orderTotalResult.rows.length === 0) {
+          console.error("❌ NO ORDER ITEMS FOUND for order:", orderId);
+        }
+
+        const orderTotal = parseFloat(orderTotalResult.rows[0]?.total) || 0;
+        const commissionRate =
+          parseFloat(orderTotalResult.rows[0]?.riderCommissionRate) || 15;
+        const riderEarnings = (orderTotal * commissionRate) / 100;
+
+        console.log("💰 Order total:", orderTotal);
+        console.log("📊 Commission rate:", commissionRate + "%");
+        console.log("💵 Rider earnings:", riderEarnings.toFixed(2));
+        console.log("🆔 Rider ID for update:", riderId);
+
+        // Update rider stats: increment totalDeliveries and add to earnings
+        const updateResult = await query(
+          `UPDATE "Rider"
+           SET "totalDeliveries" = "totalDeliveries" + 1,
+               "earnings" = "earnings" + $1,
+               "updatedAt" = $2
+           WHERE id = $3
+           RETURNING "totalDeliveries", "earnings"`,
+          [riderEarnings, manilaTime, riderId],
+        );
+
+        console.log("📤 Update result rows count:", updateResult.rows.length);
+        console.log("✅ Rider stats updated:", updateResult.rows[0]);
+
+        if (!updateResult.rows[0]) {
+          console.error("❌ UPDATE returned no rows! Rider ID:", riderId);
+          console.error(
+            "   This means Rider with ID",
+            riderId,
+            "doesn't exist!",
+          );
+        }
+      } catch (statsErr) {
+        console.error("❌ Error updating rider stats:", statsErr);
+        console.error("   Stack:", statsErr.stack);
+      }
+    }
+
+    // Fetch updated delivery with all details (items, user info, etc.)
+    const updatedDelivery = await query(
+      `SELECT 
+        o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status,
+        o."isPaid", o."paymentMethod", o."statusHistory", o."createdAt", o."updatedAt",
+        u.name AS "userName", u.email AS "userEmail",
+        COALESCE(SUM(p.price * oi.quantity), 0) AS "total",
+        json_agg(json_build_object(
+          'id', oi.id,
+          'quantity', oi.quantity,
+          'name', p.name,
+          'price', p.price
+        )) AS "items"
+       FROM "Order" o
+       JOIN "User" u ON o."userId" = u.id
+       LEFT JOIN "OrderItem" oi ON o.id = oi."orderId"
+       LEFT JOIN "Product" p ON oi."productId" = p.id
+       WHERE o.id = $1 AND o."riderId" = $2
+       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."paymentMethod", o."statusHistory", o."createdAt", o."updatedAt", u.id, u.name, u.email`,
+      [orderId, riderId],
+    );
+
+    if (updatedDelivery.rows.length === 0) {
+      return res
+        .status(500)
+        .json({ message: "Failed to retrieve updated delivery" });
+    }
 
     res.json({
       message: "Delivery status updated",
-      order: result.rows[0],
+      order: updatedDelivery.rows[0],
     });
   } catch (err) {
     next(err);
@@ -384,7 +509,7 @@ const getRiderHistory = async (req, res, next) => {
     const result = await query(
       `SELECT 
         o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status,
-        o."isPaid", o."createdAt", o."updatedAt",
+        o."isPaid", o."paymentMethod", o."createdAt", o."updatedAt",
         u.name AS "userName",
         json_agg(json_build_object(
           'id', oi.id,
@@ -396,8 +521,8 @@ const getRiderHistory = async (req, res, next) => {
        JOIN "User" u ON o."userId" = u.id
        LEFT JOIN "OrderItem" oi ON o.id = oi."orderId"
        LEFT JOIN "Product" p ON oi."productId" = p.id
-       WHERE o."riderId" = $1
-       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."createdAt", o."updatedAt", u.id, u.name
+       WHERE o."riderId" = $1 AND o.delivery_status = 'delivered'
+       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."paymentMethod", o."createdAt", o."updatedAt", u.id, u.name
        ORDER BY o."createdAt" DESC
        LIMIT 50`,
       [riderId],
@@ -418,7 +543,7 @@ const getDeliveryById = async (req, res, next) => {
     const result = await query(
       `SELECT 
         o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status,
-        o."isPaid", o."statusHistory", o."createdAt", o."updatedAt",
+        o."isPaid", o."paymentMethod", o."statusHistory", o."createdAt", o."updatedAt",
         u.name AS "userName", u.email AS "userEmail",
         COALESCE(SUM(p.price * oi.quantity), 0) AS "total",
         json_agg(json_build_object(
@@ -432,7 +557,7 @@ const getDeliveryById = async (req, res, next) => {
        LEFT JOIN "OrderItem" oi ON o.id = oi."orderId"
        LEFT JOIN "Product" p ON oi."productId" = p.id
        WHERE o.id = $1 AND o."riderId" = $2
-       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."statusHistory", o."createdAt", o."updatedAt", u.id, u.name, u.email`,
+       GROUP BY o.id, o."userId", o.phone, o.address, o.order_status, o.delivery_status, o."isPaid", o."paymentMethod", o."statusHistory", o."createdAt", o."updatedAt", u.id, u.name, u.email`,
       [orderId, riderId],
     );
 

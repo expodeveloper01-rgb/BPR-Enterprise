@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useRiderAuth from "@/hooks/use-rider-auth";
 import apiClient from "@/lib/api-client";
@@ -21,6 +21,7 @@ const RiderDashboard = () => {
   });
   const [statusTitle, setStatusTitle] = useState("Pickup Pending");
   const [statusMessage, setStatusMessage] = useState("");
+  const fetchDataRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -33,22 +34,35 @@ const RiderDashboard = () => {
     }
 
     if (user && token) {
+      let interval;
+
       const fetchData = async () => {
         try {
           const profileRes = await apiClient.get("/rider/profile", {
             headers: { Authorization: `Bearer ${token}` },
           });
+          console.log("📊 Dashboard - Profile fetched:", profileRes.data);
           setProfile(profileRes.data);
 
           const pendingRes = await apiClient.get("/rider/deliveries/pending", {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setPendingDeliveries(pendingRes.data);
+          const pending = pendingRes.data;
+          setPendingDeliveries(pending);
 
           const activeRes = await apiClient.get("/rider/deliveries/active", {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setActiveDeliveries(activeRes.data);
+          const active = activeRes.data;
+          setActiveDeliveries(active);
+
+          // Only keep polling if there are deliveries
+          if (pending.length === 0 && active.length === 0) {
+            if (interval) {
+              clearInterval(interval);
+              interval = null;
+            }
+          }
         } catch (err) {
           console.error("Failed to fetch data", err);
           if (err.response?.status === 401) {
@@ -60,10 +74,21 @@ const RiderDashboard = () => {
         }
       };
 
+      // Store fetch function in ref so window focus listener can call it
+      fetchDataRef.current = fetchData;
+
+      // Initial fetch
       fetchData();
 
-      // Refetch every 5 seconds to show real-time updates
-      const interval = setInterval(fetchData, 5000);
+      // Setup polling - intentionally aggressive updates for active deliveries
+      // but only when deliveries exist
+      const setupPolling = () => {
+        if (!interval) {
+          interval = setInterval(fetchData, 20000); // 20-second polling
+        }
+      };
+
+      setupPolling();
 
       // Refetch when page becomes visible
       const handleVisibilityChange = () => {
@@ -74,7 +99,7 @@ const RiderDashboard = () => {
       document.addEventListener("visibilitychange", handleVisibilityChange);
 
       return () => {
-        clearInterval(interval);
+        if (interval) clearInterval(interval);
         document.removeEventListener(
           "visibilitychange",
           handleVisibilityChange,
@@ -82,6 +107,19 @@ const RiderDashboard = () => {
       };
     }
   }, [user, token, authLoading, navigate]);
+
+  // Refresh profile when window regains focus (e.g., returning from delivery detail)
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      console.log("🔄 Window focused - Refreshing rider data");
+      if (fetchDataRef.current) {
+        fetchDataRef.current();
+      }
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    return () => window.removeEventListener("focus", handleWindowFocus);
+  }, []);
 
   const handleAcceptDelivery = async (orderId) => {
     // Show modal instead of immediate accept
@@ -318,48 +356,51 @@ const RiderDashboard = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
-                      {delivery.delivery_status?.charAt(0).toUpperCase() +
-                        delivery.delivery_status?.slice(1)}
-                    </span>
+                    {(() => {
+                      // Get latest status title from history or use delivery_status
+                      let statusDisplay = delivery.delivery_status;
+
+                      if (
+                        delivery.statusHistory &&
+                        Array.isArray(delivery.statusHistory) &&
+                        delivery.statusHistory.length > 0
+                      ) {
+                        const latestStatus =
+                          delivery.statusHistory[
+                            delivery.statusHistory.length - 1
+                          ];
+                        if (latestStatus.title) {
+                          statusDisplay = latestStatus.title;
+                        } else if (latestStatus.status) {
+                          statusDisplay = latestStatus.status;
+                        }
+                      }
+
+                      return (
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
+                          {statusDisplay === "in-transit"
+                            ? "In Transit"
+                            : statusDisplay === "pickup-pending"
+                              ? "Pickup Pending"
+                              : statusDisplay === "delivered"
+                                ? "Delivered"
+                                : statusDisplay
+                                    ?.split("-")
+                                    .map(
+                                      (word) =>
+                                        word.charAt(0).toUpperCase() +
+                                        word.slice(1),
+                                    )
+                                    .join(" ") || "Pending"}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Button
-          onClick={() => navigate("/rider/deliveries/pending")}
-          variant="outline"
-          className="rounded-lg"
-        >
-          Available Orders
-        </Button>
-        <Button
-          onClick={() => navigate("/rider/deliveries/active")}
-          variant="outline"
-          className="rounded-lg"
-        >
-          Active Deliveries
-        </Button>
-        <Button
-          onClick={() => navigate("/rider/deliveries/history")}
-          variant="outline"
-          className="rounded-lg"
-        >
-          History
-        </Button>
-        <Button
-          onClick={() => navigate("/rider/profile")}
-          variant="outline"
-          className="rounded-lg"
-        >
-          My Profile
-        </Button>
       </div>
 
       {/* Accept Delivery Modal */}

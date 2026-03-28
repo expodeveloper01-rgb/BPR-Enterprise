@@ -2,8 +2,13 @@ import { useState, useEffect } from "react";
 import { Package, Clock, MapPin, AlertCircle, CheckCircle } from "lucide-react";
 import getOrders from "@/actions/get-orders";
 import useAuth from "@/hooks/use-auth";
+import {
+  getLatestStatusTitle,
+  getLatestStatusMessage,
+} from "@/lib/status-utils";
 
 const statusColors = {
+  pending_confirmation: "bg-orange-50 border-orange-200 text-orange-800",
   pending: "bg-yellow-50 border-yellow-200 text-yellow-800",
   processing: "bg-blue-50 border-blue-200 text-blue-800",
   shipped: "bg-purple-50 border-purple-200 text-purple-800",
@@ -11,6 +16,7 @@ const statusColors = {
 };
 
 const deliveryStatusIcons = {
+  pending_confirmation: <AlertCircle className="w-4 h-4" />,
   pending: <Clock className="w-4 h-4" />,
   processing: <Package className="w-4 h-4" />,
   shipped: <Package className="w-4 h-4" />,
@@ -23,32 +29,39 @@ const OrdersCard = () => {
   const [activeOrders, setActiveOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchOrders = () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    getOrders()
+      .then((data) => {
+        setOrders(data);
+        // Filter for non-delivered and non-cancelled orders (include pending_confirmation for display)
+        const active = data.filter(
+          (order) =>
+            order.delivery_status !== "delivered" &&
+            order.delivery_status !== "cancelled",
+        );
+        setActiveOrders(active);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const fetchOrders = () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      getOrders()
-        .then((data) => {
-          setOrders(data);
-          // Filter for non-delivered orders
-          const active = data.filter(
-            (order) =>
-              order.delivery_status !== "delivered" &&
-              order.delivery_status !== "cancelled",
-          );
-          setActiveOrders(active);
-        })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    };
-
     fetchOrders();
+  }, [user]);
 
-    // Refetch every 5 seconds to check for delivery status updates
-    const interval = setInterval(fetchOrders, 5000);
+  // Polling: use stable 15-second interval
+  // Avoids constant interval resets that were causing excessive queries
+  useEffect(() => {
+    if (!user) return;
+
+    // Poll every 15 seconds - reasonable for both pending confirmation and delivery tracking
+    const interval = setInterval(fetchOrders, 15000);
 
     return () => clearInterval(interval);
   }, [user]);
@@ -81,10 +94,14 @@ const OrdersCard = () => {
           ) || 0;
 
         const statusBg =
-          statusColors[order.delivery_status] || statusColors.pending;
+          order.order_status === "pending_confirmation"
+            ? statusColors.pending_confirmation
+            : statusColors[order.delivery_status] || statusColors.pending;
         const statusIcon =
-          deliveryStatusIcons[order.delivery_status] ||
-          deliveryStatusIcons.pending;
+          order.order_status === "pending_confirmation"
+            ? deliveryStatusIcons.pending_confirmation
+            : deliveryStatusIcons[order.delivery_status] ||
+              deliveryStatusIcons.pending;
 
         return (
           <div
@@ -96,13 +113,7 @@ const OrdersCard = () => {
                 <div className="flex-shrink-0">{statusIcon}</div>
                 <div className="min-w-0">
                   <h3 className="font-semibold text-sm md:text-base capitalize">
-                    {order.delivery_status === "pending"
-                      ? "Order Confirmed - Waiting for pickup"
-                      : order.delivery_status === "processing"
-                        ? "Order Processing"
-                        : order.delivery_status === "shipped"
-                          ? "Order on the way"
-                          : "Order Delivered"}
+                    {getLatestStatusTitle(order)}
                   </h3>
                   <p className="text-xs md:text-sm opacity-75 mt-1">
                     Order #{order.id?.slice(-8).toUpperCase() || "N/A"}

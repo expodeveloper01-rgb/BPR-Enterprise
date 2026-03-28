@@ -1,5 +1,9 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  getLatestStatusTitle,
+  getLatestStatusMessage,
+} from "@/lib/status-utils";
 
 const statusColors = {
   pending: "bg-gray-50 text-gray-700",
@@ -40,13 +44,47 @@ const CustomerOrderDetail = ({ order, onClose }) => {
               </label>
               <p className="text-sm text-neutral-800 mt-1">
                 {order.createdAt
-                  ? new Date(order.createdAt).toLocaleDateString("en-PH", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                  ? (() => {
+                      try {
+                        const dateObj = new Date(order.createdAt);
+                        const timestamp = dateObj.getTime();
+
+                        // Check if date is valid
+                        if (Number.isNaN(timestamp) || timestamp === 0) {
+                          return "Invalid Date";
+                        }
+
+                        // Try toLocaleString with timeZone - this should properly convert UTC to Manila time
+                        const formatted = dateObj.toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          timeZone: "Asia/Manila",
+                          hour12: true,
+                        });
+
+                        // Convert format from "Mar 28, 2026, 04:08:25 PM" to "Mar 28, 2026, 4:08:25 PM"
+                        return formatted.replace(/0(\d:\d)/, "$1");
+                      } catch (error) {
+                        console.error("Date formatting error:", error);
+                        // Fallback: try basic formatting
+                        try {
+                          return dateObj.toLocaleString("en-PH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Asia/Manila",
+                          });
+                        } catch {
+                          return "Invalid Date";
+                        }
+                      }
+                    })()
                   : "Invalid Date"}
               </p>
             </div>
@@ -61,10 +99,7 @@ const CustomerOrderDetail = ({ order, onClose }) => {
                     "bg-gray-100 text-gray-700"
                   }`}
                 >
-                  {order.order_status
-                    ? order.order_status.charAt(0).toUpperCase() +
-                      order.order_status.slice(1)
-                    : "Pending"}
+                  {getLatestStatusTitle(order)}
                 </span>
               </p>
             </div>
@@ -89,14 +124,16 @@ const CustomerOrderDetail = ({ order, onClose }) => {
           <hr />
 
           {/* Status Message */}
-          {order.statusMessage && (
+          {getLatestStatusMessage(order) && (
             <>
               <div>
                 <h3 className="font-semibold text-neutral-800 mb-2">
-                  Seller's Message
+                  Latest Update
                 </h3>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-900">{order.statusMessage}</p>
+                  <p className="text-sm text-blue-900">
+                    {getLatestStatusMessage(order)}
+                  </p>
                 </div>
               </div>
               <hr />
@@ -121,19 +158,24 @@ const CustomerOrderDetail = ({ order, onClose }) => {
                               "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {entry.status.charAt(0).toUpperCase() +
-                              entry.status.slice(1)}
+                            {entry.title ||
+                              entry.status.charAt(0).toUpperCase() +
+                                entry.status.slice(1)}
                           </span>
                         </p>
                         <p className="text-xs text-neutral-500">
                           {entry.timestamp
-                            ? new Date(entry.timestamp).toLocaleDateString(
+                            ? new Date(entry.timestamp).toLocaleString(
                                 "en-PH",
                                 {
+                                  year: "numeric",
                                   month: "short",
                                   day: "numeric",
                                   hour: "2-digit",
                                   minute: "2-digit",
+                                  second: "2-digit",
+                                  timeZone: "Asia/Manila",
+                                  hour12: true,
                                 },
                               )
                             : ""}
@@ -254,8 +296,43 @@ const CustomerOrderDetail = ({ order, onClose }) => {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <strong>Delivery Status:</strong>{" "}
-                    {order.delivery_status?.charAt(0).toUpperCase() +
-                      order.delivery_status?.slice(1) || "Pending"}
+                    {(() => {
+                      // Get latest status from history first
+                      let statusDisplay = order.delivery_status;
+
+                      if (
+                        order.statusHistory &&
+                        Array.isArray(order.statusHistory) &&
+                        order.statusHistory.length > 0
+                      ) {
+                        const latestStatus =
+                          order.statusHistory[order.statusHistory.length - 1];
+                        if (latestStatus.title) {
+                          statusDisplay = latestStatus.title;
+                        } else if (latestStatus.status) {
+                          statusDisplay = latestStatus.status;
+                        }
+                      }
+
+                      return statusDisplay === "pickup-pending"
+                        ? "Pickup Pending"
+                        : statusDisplay === "in-transit"
+                          ? "In Transit"
+                          : statusDisplay === "delivered"
+                            ? "Delivered"
+                            : statusDisplay === "pending"
+                              ? "Waiting for Rider"
+                              : statusDisplay
+                                ? statusDisplay
+                                    .split("-")
+                                    .map(
+                                      (word) =>
+                                        word.charAt(0).toUpperCase() +
+                                        word.slice(1),
+                                    )
+                                    .join(" ")
+                                : "Pending";
+                    })()}
                   </p>
                 </div>
               </div>

@@ -1,5 +1,9 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  getLatestStatusTitle,
+  getLatestStatusMessage,
+} from "@/lib/status-utils";
 
 const statusColors = {
   pending: "bg-gray-50 text-gray-700",
@@ -11,7 +15,8 @@ const statusColors = {
 
 const OrderDetail = ({ order, onClose }) => {
   const total = order.orderItems.reduce(
-    (sum, oi) => sum + (oi.product?.price ?? 0) * (oi.quantity ?? 1),
+    (sum, oi) =>
+      sum + ((oi.price || oi.product?.price) ?? 0) * (oi.quantity ?? 1),
     0,
   );
 
@@ -43,13 +48,47 @@ const OrderDetail = ({ order, onClose }) => {
               </label>
               <p className="text-sm text-neutral-800 mt-1">
                 {order.createdAt
-                  ? new Date(order.createdAt).toLocaleDateString("en-PH", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                  ? (() => {
+                      try {
+                        const dateObj = new Date(order.createdAt);
+                        const timestamp = dateObj.getTime();
+
+                        // Check if date is valid
+                        if (Number.isNaN(timestamp) || timestamp === 0) {
+                          return "Invalid Date";
+                        }
+
+                        // Format with proper timezone handling - use en-US with hour12 true for AM/PM
+                        const formatted = dateObj.toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          timeZone: "Asia/Manila",
+                          hour12: true,
+                        });
+
+                        return formatted;
+                      } catch (error) {
+                        console.error("Date formatting error:", error);
+                        // Fallback
+                        try {
+                          return dateObj.toLocaleString("en-PH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            timeZone: "Asia/Manila",
+                          });
+                        } catch {
+                          return "Invalid Date";
+                        }
+                      }
+                    })()
                   : "Invalid Date"}
               </p>
             </div>
@@ -80,13 +119,16 @@ const OrderDetail = ({ order, onClose }) => {
             </h3>
             <div className="space-y-2 text-sm text-neutral-700">
               <p>
-                <strong>Name:</strong> {order.user?.name ?? "Guest"}
+                <strong>Name:</strong>{" "}
+                {order.user?.name || order.userName || "Guest"}
               </p>
               <p>
-                <strong>Email:</strong> {order.user?.email ?? "N/A"}
+                <strong>Email:</strong>{" "}
+                {order.user?.email || order.userEmail || "N/A"}
               </p>
               <p>
-                <strong>Phone:</strong> {order.user?.phone ?? "N/A"}
+                <strong>Phone:</strong>{" "}
+                {order.user?.phone || order.phone || "N/A"}
               </p>
             </div>
           </div>
@@ -136,8 +178,7 @@ const OrderDetail = ({ order, onClose }) => {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <strong>Delivery Status:</strong>{" "}
-                    {order.delivery_status?.charAt(0).toUpperCase() +
-                      order.delivery_status?.slice(1) || "Pending"}
+                    {getLatestStatusTitle(order)}
                   </p>
                 </div>
               </div>
@@ -151,18 +192,19 @@ const OrderDetail = ({ order, onClose }) => {
             <h3 className="font-semibold text-neutral-800 mb-3">Order Items</h3>
             <div className="space-y-3">
               {order.orderItems.map((item) => {
-                const firstImage = item.images?.[0]?.url;
+                // Handle both image formats: single image object or array of images
+                const imageUrl = item.image?.url || item.images?.[0]?.url;
                 return (
                   <div
                     key={item.id}
                     className="flex gap-3 border border-gray-100 rounded-lg p-3"
                   >
                     {/* Product Image */}
-                    {firstImage ? (
+                    {imageUrl ? (
                       <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
                         <img
-                          src={firstImage}
-                          alt={item.product?.name}
+                          src={imageUrl}
+                          alt={item.name || item.product?.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -174,7 +216,7 @@ const OrderDetail = ({ order, onClose }) => {
                     {/* Product Details */}
                     <div className="flex-1">
                       <p className="font-medium text-neutral-800">
-                        {item.product?.name}
+                        {item.name || item.product?.name}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Qty: {item.quantity}
@@ -185,7 +227,8 @@ const OrderDetail = ({ order, onClose }) => {
                     <p className="font-semibold text-neutral-800 text-right">
                       ₱
                       {(
-                        (item.product?.price ?? 0) * item.quantity
+                        ((item.price || item.product?.price) ?? 0) *
+                        item.quantity
                       ).toLocaleString("en-PH", {
                         minimumFractionDigits: 2,
                       })}
@@ -248,19 +291,24 @@ const OrderDetail = ({ order, onClose }) => {
                               "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {entry.status.charAt(0).toUpperCase() +
-                              entry.status.slice(1)}
+                            {entry.title ||
+                              entry.status.charAt(0).toUpperCase() +
+                                entry.status.slice(1).replace(/-/g, " ")}
                           </span>
                         </p>
                         <p className="text-xs text-neutral-500">
                           {entry.timestamp
-                            ? new Date(entry.timestamp).toLocaleDateString(
+                            ? new Date(entry.timestamp).toLocaleString(
                                 "en-PH",
                                 {
+                                  year: "numeric",
                                   month: "short",
                                   day: "numeric",
                                   hour: "2-digit",
                                   minute: "2-digit",
+                                  second: "2-digit",
+                                  timeZone: "Asia/Manila",
+                                  hour12: true,
                                 },
                               )
                             : ""}

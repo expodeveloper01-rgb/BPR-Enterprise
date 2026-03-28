@@ -9,7 +9,10 @@
     "migrate": "node prisma/migrate.js",
     "create-admin": "node scripts/create-admin.js",
     "check:data": "node check-data.js",
-    "fix:kitchen": "node fix-products-kitchen.js"
+    "fix:kitchen": "node fix-products-kitchen.js",
+    "fix:timestamps": "node fix-timestamps.js",
+    "fix:rider-stats": "node fix-rider-stats.js",
+    "debug:rider": "node debug-rider-stats.js"
   },
   "dependencies": {
     "@prisma/client": "^5.8.0",

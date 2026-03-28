@@ -82,10 +82,10 @@ const ResetPasswordPage = () => {
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-lg">
+        <div className="md:bg-white md:border md:border-gray-200 md:rounded-2xl p-4 md:p-6 space-y-3 md:space-y-4 md:shadow-lg">
           {/* Logo - Mobile */}
           <div className="flex justify-center mb-1 md:hidden">
-            <img src={logo} alt="logo" className="w-20" />
+            <img src={logo} alt="logo" className="w-32" />
           </div>
 
           <div className="space-y-1.5 text-center">
@@ -114,7 +114,7 @@ const ResetPasswordPage = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min. 6 characters"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                    className="w-full border-b md:border bg-transparent md:bg-white md:rounded-lg border-b-gray-300 md:border-gray-300 px-0 md:px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-b-pink-500 md:focus:ring-2 md:focus:ring-pink-500 transition"
                   />
                   <button
                     type="button"
@@ -138,7 +138,7 @@ const ResetPasswordPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Min. 6 characters"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                    className="w-full border-b md:border bg-transparent md:bg-white md:rounded-lg border-b-gray-300 md:border-gray-300 px-0 md:px-4 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-b-pink-500 md:focus:ring-2 md:focus:ring-pink-500 transition"
                   />
                   <button
                     type="button"

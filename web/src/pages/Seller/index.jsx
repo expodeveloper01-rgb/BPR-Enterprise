@@ -4,7 +4,18 @@ import SellerLayout from "./SellerLayout";
 import { useSeller } from "@/context/SellerContext";
 import apiClient from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, ShoppingBag, Star, Archive, ArrowRight } from "lucide-react";
+import {
+  Package,
+  ShoppingBag,
+  Star,
+  Archive,
+  ArrowRight,
+  DollarSign,
+  Clock,
+  AlertCircle,
+  Zap,
+  RefreshCw,
+} from "lucide-react";
 
 const StatCard = ({ label, value, icon: Icon, color }) => (
   <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center gap-4">
@@ -34,8 +45,9 @@ const SellerDashboard = () => {
   const { selectedKitchenId } = useSeller();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
+  const fetchStats = () => {
     if (!selectedKitchenId) {
       setStats(null);
       setLoading(false);
@@ -48,19 +60,42 @@ const SellerDashboard = () => {
       .then((r) => setStats(r.data))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
-  }, [selectedKitchenId]);
+  };
+
+  useEffect(() => {
+    fetchStats();
+
+    // Auto-refresh stats every 30 seconds for real-time updates
+    const interval = setInterval(fetchStats, 30000);
+
+    return () => clearInterval(interval);
+  }, [selectedKitchenId, refreshKey]);
+
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   return (
     <SellerLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-800">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Overview of your store
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-800">Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Overview of your store
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh stats"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Products & Orders */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {loading ? (
             <>
@@ -84,16 +119,124 @@ const SellerDashboard = () => {
                 color="bg-amber-50 text-amber-600"
               />
               <StatCard
-                label="Archived"
-                value={stats?.archivedProducts}
-                icon={Archive}
-                color="bg-gray-100 text-gray-500"
-              />
-              <StatCard
                 label="Total Orders"
                 value={stats?.totalOrders}
                 icon={ShoppingBag}
                 color="bg-green-50 text-green-600"
+              />
+              <StatCard
+                label="Paid Orders"
+                value={stats?.paidOrders}
+                icon={ShoppingBag}
+                color="bg-emerald-50 text-emerald-600"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Stats - Earnings & Revenue */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {loading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <StatCard
+                label="Gross Earnings"
+                value={`₱${(stats?.totalRevenue || 0).toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
+                icon={DollarSign}
+                color="bg-blue-50 text-blue-600"
+              />
+              <StatCard
+                label="Net Earnings"
+                value={`₱${(stats?.netRevenue || 0).toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
+                icon={DollarSign}
+                color="bg-green-50 text-green-600"
+              />
+              <StatCard
+                label="Rider Commission Deducted"
+                value={`₱${(stats?.riderCommissionAmount || 0).toLocaleString(
+                  "en-PH",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  },
+                )}`}
+                icon={AlertCircle}
+                color="bg-red-50 text-red-600"
+              />
+              <StatCard
+                label="Rider Commission Rate"
+                value={`${(stats?.kitchenSettings?.riderCommissionRate || 15).toFixed(1)}%`}
+                icon={Zap}
+                color="bg-purple-50 text-purple-600"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Stats - Pending Revenue */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {loading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <StatCard
+                label="Pending Revenue (Gross)"
+                value={`₱${(stats?.pendingRevenue || 0).toLocaleString(
+                  "en-PH",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  },
+                )}`}
+                icon={Clock}
+                color="bg-yellow-50 text-yellow-600"
+              />
+              <StatCard
+                label="Pending Revenue (Net)"
+                value={`₱${(stats?.netPendingRevenue || 0).toLocaleString(
+                  "en-PH",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  },
+                )}`}
+                icon={Clock}
+                color="bg-yellow-100 text-yellow-700"
+              />
+              <StatCard
+                label="Pending Commission"
+                value={`₱${(stats?.pendingCommissionAmount || 0).toLocaleString(
+                  "en-PH",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  },
+                )}`}
+                icon={AlertCircle}
+                color="bg-orange-50 text-orange-600"
+              />
+              <StatCard
+                label="Pending Confirmation"
+                value={stats?.pendingOrders}
+                icon={AlertCircle}
+                color="bg-orange-100 text-orange-700"
               />
             </>
           )}
