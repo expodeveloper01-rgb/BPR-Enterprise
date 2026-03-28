@@ -50,7 +50,13 @@ const register = async (req, res, next) => {
         'UPDATE "User" SET "verifyCode" = $1, "verifyCodeExpires" = $2 WHERE email = $3',
         [code, expires, email],
       );
-      await sendVerificationEmail(email, existing.name, code);
+      // Send verification email (non-blocking)
+      sendVerificationEmail(email, existing.name, code).catch((err) =>
+        console.error(
+          `Failed to send verification email to ${email}:`,
+          err.message,
+        ),
+      );
       return res.status(200).json({ pendingEmail: email });
     }
 
@@ -63,7 +69,13 @@ const register = async (req, res, next) => {
       [name, email, hashed, code, expires],
     );
 
-    await sendVerificationEmail(email, name, code);
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email, name, code).catch((err) =>
+      console.error(
+        `Failed to send verification email to ${email}:`,
+        err.message,
+      ),
+    );
     return res.status(200).json({ pendingEmail: email });
   } catch (err) {
     next(err);
@@ -125,7 +137,13 @@ const resendCode = async (req, res, next) => {
       'UPDATE "User" SET "verifyCode" = $1, "verifyCodeExpires" = $2, "updatedAt" = NOW() WHERE email = $3',
       [code, expires, email],
     );
-    await sendVerificationEmail(email, user.name, code);
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email, user.name, code).catch((err) =>
+      console.error(
+        `Failed to send verification email to ${email}:`,
+        err.message,
+      ),
+    );
     return res.json({ message: "Code resent" });
   } catch (err) {
     next(err);
@@ -246,7 +264,13 @@ const forgotPassword = async (req, res, next) => {
     );
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?email=${encodeURIComponent(email)}&code=${code}`;
-    await sendPasswordResetEmail(email, user.name, resetLink);
+    // Send password reset email (non-blocking)
+    sendPasswordResetEmail(email, user.name, resetLink).catch((err) =>
+      console.error(
+        `Failed to send password reset email to ${email}:`,
+        err.message,
+      ),
+    );
 
     return res
       .status(200)

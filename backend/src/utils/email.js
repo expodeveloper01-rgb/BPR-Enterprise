@@ -22,42 +22,54 @@ const gmailTransporter = nodemailer.createTransport({
   },
 });
 
-// Send email with fallback logic
+// Send email with timeout protection and smart fallback
 async function sendEmailWithFallback(mailOptions) {
-  try {
-    // Try SendGrid first
-    if (process.env.SENDGRID_API_KEY) {
-      try {
-        await sendgridTransporter.sendMail(mailOptions);
-        console.log(`✅ Email sent via SendGrid to ${mailOptions.to}`);
-        return;
-      } catch (err) {
-        console.warn(
-          "⚠️ SendGrid failed, falling back to Gmail SMTP:",
-          err.message,
-        );
-      }
-    }
+  const TIMEOUT_MS = 8000; // 8 second timeout per provider
 
-    // Fallback to Gmail SMTP
+  // Helper function to send with timeout
+  const sendWithTimeout = (transporter, provider) => {
+    return Promise.race([
+      transporter.sendMail(mailOptions),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`${provider} timeout after ${TIMEOUT_MS}ms`)),
+          TIMEOUT_MS,
+        ),
+      ),
+    ]);
+  };
+
+  try {
+    // Try Gmail SMTP first (more reliable on Render)
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
       try {
-        await gmailTransporter.sendMail(mailOptions);
+        await sendWithTimeout(gmailTransporter, "Gmail");
         console.log(`✅ Email sent via Gmail SMTP to ${mailOptions.to}`);
         return;
       } catch (err) {
-        console.error("❌ Gmail SMTP also failed:", err.message);
+        console.warn("⚠️ Gmail SMTP failed, trying SendGrid:", err.message);
+      }
+    }
+
+    // Fallback to SendGrid
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        await sendWithTimeout(sendgridTransporter, "SendGrid");
+        console.log(`✅ Email sent via SendGrid to ${mailOptions.to}`);
+        return;
+      } catch (err) {
+        console.error("❌ SendGrid also failed:", err.message);
         throw new Error(
-          "Failed to send email via both SendGrid and Gmail SMTP",
+          "Failed to send email via both Gmail SMTP and SendGrid",
         );
       }
     }
 
     throw new Error(
-      "No email service configured (missing SENDGRID_API_KEY and SMTP credentials)",
+      "No email service configured (missing SMTP and SENDGRID credentials)",
     );
   } catch (err) {
-    console.error("❌ Email service error:", err);
+    console.error("❌ Email service error:", err.message);
     throw err;
   }
 }

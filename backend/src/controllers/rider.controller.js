@@ -47,8 +47,13 @@ const registerRider = async (req, res, next) => {
 
     const rider = result.rows[0];
 
-    // Send verification email
-    await sendRiderVerificationEmail(email, name, verifyCode);
+    // Send verification email (non-blocking)
+    sendRiderVerificationEmail(email, name, verifyCode).catch((err) =>
+      console.error(
+        `Failed to send verification email to ${email}:`,
+        err.message,
+      ),
+    );
 
     res.status(201).json({
       message:
@@ -195,12 +200,6 @@ const getRiderProfile = async (req, res, next) => {
       return res.status(404).json({ message: "Rider not found" });
     }
 
-    console.log("👤 getRiderProfile - Returning stats:", {
-      name: result.rows[0].name,
-      totalDeliveries: result.rows[0].totalDeliveries,
-      earnings: result.rows[0].earnings,
-    });
-
     res.json(result.rows[0]);
   } catch (err) {
     next(err);
@@ -331,12 +330,6 @@ const updateDeliveryStatus = async (req, res, next) => {
     const { status, statusTitle, statusMessage = "" } = req.body;
     const riderId = req.user.id;
 
-    console.log("📦 updateDeliveryStatus called:", {
-      orderId,
-      status,
-      riderId,
-    });
-
     const validStatuses = [
       "pickup-pending",
       "in-transit",
@@ -402,11 +395,6 @@ const updateDeliveryStatus = async (req, res, next) => {
     // If delivery is complete, update rider stats
     if (status === "delivered") {
       try {
-        console.log(
-          "🎉 DELIVERY COMPLETED - Processing stats for rider:",
-          riderId,
-        );
-
         // Get order total and kitchen commission rate
         const orderTotalResult = await query(
           `SELECT 
@@ -419,9 +407,6 @@ const updateDeliveryStatus = async (req, res, next) => {
           [orderId],
         );
 
-        console.log("📦 Full query result:", orderTotalResult.rows);
-        console.log("📦 Query result count:", orderTotalResult.rows.length);
-
         if (orderTotalResult.rows.length === 0) {
           console.error("❌ NO ORDER ITEMS FOUND for order:", orderId);
         }
@@ -430,11 +415,6 @@ const updateDeliveryStatus = async (req, res, next) => {
         const commissionRate =
           parseFloat(orderTotalResult.rows[0]?.riderCommissionRate) || 15;
         const riderEarnings = (orderTotal * commissionRate) / 100;
-
-        console.log("💰 Order total:", orderTotal);
-        console.log("📊 Commission rate:", commissionRate + "%");
-        console.log("💵 Rider earnings:", riderEarnings.toFixed(2));
-        console.log("🆔 Rider ID for update:", riderId);
 
         // Update rider stats: increment totalDeliveries and add to earnings
         const updateResult = await query(
@@ -446,9 +426,6 @@ const updateDeliveryStatus = async (req, res, next) => {
            RETURNING "totalDeliveries", "earnings"`,
           [riderEarnings, manilaTime, riderId],
         );
-
-        console.log("📤 Update result rows count:", updateResult.rows.length);
-        console.log("✅ Rider stats updated:", updateResult.rows[0]);
 
         if (!updateResult.rows[0]) {
           console.error("❌ UPDATE returned no rows! Rider ID:", riderId);

@@ -14,6 +14,111 @@ import {
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
+// Rider SVG Logo
+const RiderLogo = () => (
+  <svg
+    viewBox="0 0 100 100"
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-8 h-8"
+  >
+    <defs>
+      <linearGradient id="bikeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: "#3B82F6", stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: "#1E40AF", stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    {/* Wheels */}
+    <circle
+      cx="25"
+      cy="70"
+      r="12"
+      fill="none"
+      stroke="#1F2937"
+      strokeWidth="2"
+    />
+    <circle
+      cx="75"
+      cy="70"
+      r="12"
+      fill="none"
+      stroke="#1F2937"
+      strokeWidth="2"
+    />
+    <circle
+      cx="25"
+      cy="70"
+      r="8"
+      fill="none"
+      stroke="#3B82F6"
+      strokeWidth="1"
+    />
+    <circle
+      cx="75"
+      cy="70"
+      r="8"
+      fill="none"
+      stroke="#3B82F6"
+      strokeWidth="1"
+    />
+    {/* Frame */}
+    <line x1="25" y1="70" x2="50" y2="50" stroke="#1F2937" strokeWidth="2" />
+    <line x1="75" y1="70" x2="50" y2="50" stroke="#1F2937" strokeWidth="2" />
+    <line x1="50" y1="50" x2="45" y2="30" stroke="#1F2937" strokeWidth="2" />
+    {/* Rider Head */}
+    <circle cx="45" cy="22" r="6" fill="url(#bikeGradient)" />
+    {/* Rider Body */}
+    <ellipse cx="45" cy="38" rx="5" ry="8" fill="url(#bikeGradient)" />
+    {/* Rider Arms */}
+    <line
+      x1="40"
+      y1="35"
+      x2="30"
+      y2="32"
+      stroke="url(#bikeGradient)"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="50"
+      y1="35"
+      x2="60"
+      y2="32"
+      stroke="url(#bikeGradient)"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    {/* Rider Legs */}
+    <line
+      x1="42"
+      y1="46"
+      x2="35"
+      y2="65"
+      stroke="url(#bikeGradient)"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="48"
+      y1="46"
+      x2="55"
+      y2="65"
+      stroke="url(#bikeGradient)"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    {/* Handlebar */}
+    <line
+      x1="40"
+      y1="28"
+      x2="55"
+      y2="28"
+      stroke="#1F2937"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const RiderHeader = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -71,9 +176,7 @@ const RiderHeader = () => {
             className="flex items-center gap-3 cursor-pointer flex-shrink-0"
             onClick={() => navigate("/rider")}
           >
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R</span>
-            </div>
+            <RiderLogo />
             <div className="hidden md:block">
               <p className="text-sm font-bold text-neutral-900">Rider Portal</p>
               <p className="text-xs text-neutral-600">Delivery Management</p>

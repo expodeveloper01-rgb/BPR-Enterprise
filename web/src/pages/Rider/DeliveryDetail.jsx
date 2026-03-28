@@ -40,12 +40,6 @@ const DeliveryDetail = () => {
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          console.log("📦 Delivery fetched:", {
-            order_status: res.data.order_status,
-            delivery_status: res.data.delivery_status,
-            isPaid: res.data.isPaid,
-          });
-
           setDelivery(res.data);
         } catch (err) {
           console.error("Failed to load delivery:", err);
@@ -143,12 +137,6 @@ const DeliveryDetail = () => {
       // If returned directly: use res.data
       const updatedOrder = res.data.order || res.data;
 
-      console.log("🔍 Updated order received:", {
-        order_status: updatedOrder.order_status,
-        delivery_status: updatedOrder.delivery_status,
-        isPaid: updatedOrder.isPaid,
-      });
-
       setDelivery(updatedOrder);
       toast.success(`Status updated to ${statusTitle}`);
       setStatusModal({ open: false, newStatus: null });
@@ -162,11 +150,6 @@ const DeliveryDetail = () => {
               headers: { Authorization: `Bearer ${token}` },
             },
           );
-          console.log("🔄 Refresh after update:", {
-            order_status: refreshRes.data.order_status,
-            delivery_status: refreshRes.data.delivery_status,
-            isPaid: refreshRes.data.isPaid,
-          });
           setDelivery(refreshRes.data);
         } catch (err) {
           console.error("Failed to refresh delivery:", err);
@@ -177,19 +160,13 @@ const DeliveryDetail = () => {
         // Wait for backend to finish stats update, then check profile before navigating
         setTimeout(async () => {
           try {
-            console.log("📊 Checking rider profile before navigation...");
             const profileRes = await apiClient.get("/rider/profile", {
               headers: { Authorization: `Bearer ${token}` },
-            });
-            console.log("✅ Fresh profile from backend:", {
-              totalDeliveries: profileRes.data.totalDeliveries,
-              earnings: profileRes.data.earnings,
             });
           } catch (err) {
             console.error("Failed to fetch profile before navigation:", err);
           }
 
-          console.log("✅ Order delivered, navigating back to dashboard");
           navigate("/rider");
         }, 1500);
       }
