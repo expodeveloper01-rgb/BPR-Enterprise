@@ -191,7 +191,7 @@ const SignUpPage = () => {
               >
                 {loading ? (
                   <>
-                    <LoadingSpinner size="sm" className="!flex" />
+                    <LoadingSpinner size="xs" className="!flex" />
                     Verifying…
                   </>
                 ) : (

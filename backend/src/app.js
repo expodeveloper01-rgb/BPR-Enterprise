@@ -10,7 +10,17 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Middleware
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "https://belapariventures-server.onrender.com",
+  "https://belapari-ventures.onrender.com",
+  "http://localhost:3000/",
+  "http://localhost:8000/",
+  /https:\/\/.*\.onrender\.com$/, // Allow any Render deployment
+  /https:\/\/.*\.vercel\.app$/, // Allow any Vercel deployment
+];
+
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(morgan("dev"));
 
 // Stripe webhook needs raw body — must be before express.json()

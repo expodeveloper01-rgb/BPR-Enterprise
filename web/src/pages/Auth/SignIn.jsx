@@ -132,7 +132,7 @@ const SignInPage = () => {
             >
               {loading ? (
                 <>
-                  <LoadingSpinner size="sm" className="!flex" />
+                  <LoadingSpinner size="xs" className="!flex" />
                   Signing in…
                 </>
               ) : (
