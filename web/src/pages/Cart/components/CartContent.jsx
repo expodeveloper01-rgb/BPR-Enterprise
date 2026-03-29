@@ -18,6 +18,23 @@ const CartContent = ({ store = "uncle-brew" }) => {
     return total + Number(item.price * item.qty);
   }, 0);
 
+  // Fetch fresh cart data when component mounts
+  useEffect(() => {
+    cart.fetchCart();
+  }, []);
+
+  // Handle page visibility - refetch when user switches back to browser tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        cart.fetchCart();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   useEffect(() => {
     if (searchParams.get("success") && !hasShownToast.current) {
       toast.success("Payment completed!");

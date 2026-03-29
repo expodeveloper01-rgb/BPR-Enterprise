@@ -62,26 +62,33 @@ const useCart = create(
               sizeId: sizeId,
               quantity: data.qty || 1,
             });
-            set({
-              items: [
-                ...currentItems,
-                {
-                  id: itemId,
-                  cartId: response.data.item.id,
-                  productId: data.id,
-                  sizeId: sizeId,
-                  size: data.sizeName,
-                  name: data.name,
-                  price: data.price,
-                  qty: data.qty || 1,
-                  images: data.images || [],
-                  category: data.category,
-                  cuisine: data.cuisine,
-                  kitchen: data.kitchen,
-                },
-              ],
-            });
-            toast.success("Item added to cart");
+
+            // Backend returns full cart items array
+            const newItem = response.data.items?.[0] || response.data.item;
+            if (newItem) {
+              set({
+                items: [
+                  ...currentItems,
+                  {
+                    id: itemId,
+                    cartId: newItem.id,
+                    productId: data.id,
+                    sizeId: sizeId,
+                    size: data.sizeName,
+                    name: data.name,
+                    price: data.price,
+                    qty: data.qty || 1,
+                    images: newItem.url
+                      ? [{ url: newItem.url }]
+                      : data.images || [],
+                    category: data.category,
+                    cuisine: data.cuisine,
+                    kitchen: data.kitchen,
+                  },
+                ],
+              });
+              toast.success("Item added to cart");
+            }
           }
         } catch (err) {
           toast.error("Failed to add item to cart");
@@ -93,9 +100,31 @@ const useCart = create(
         try {
           const item = get().items.find((item) => item.id === id);
           if (item && item.cartId) {
-            await apiClient.delete(`/cart/${item.cartId}`);
+            const response = await apiClient.delete(`/cart/${item.cartId}`);
+            // Use response items if available, otherwise filter locally
+            if (response.data?.items) {
+              const mappedItems = response.data.items.map((backendItem) => {
+                const sizeId = backendItem.sizeId;
+                return {
+                  id: `${backendItem.productId}-${sizeId || "no-size"}`,
+                  cartId: backendItem.id,
+                  productId: backendItem.productId,
+                  sizeId: sizeId,
+                  size: backendItem.sizeName,
+                  name: backendItem.name,
+                  price: backendItem.price,
+                  qty: backendItem.quantity,
+                  images: backendItem.url ? [{ url: backendItem.url }] : [],
+                  category: backendItem.category,
+                  cuisine: backendItem.cuisine,
+                  kitchen: backendItem.kitchen,
+                };
+              });
+              set({ items: mappedItems });
+            } else {
+              set({ items: get().items.filter((item) => item.id !== id) });
+            }
           }
-          set({ items: get().items.filter((item) => item.id !== id) });
           toast.success("Item removed from cart");
         } catch (err) {
           toast.error("Failed to remove item");
@@ -119,12 +148,36 @@ const useCart = create(
         try {
           const item = get().items.find((item) => item.id === id);
           if (item && item.cartId) {
-            await apiClient.put(`/cart/${item.cartId}`, { quantity: qty });
+            const response = await apiClient.put(`/cart/${item.cartId}`, {
+              quantity: qty,
+            });
+            // Use response items if available, otherwise update locally
+            if (response.data?.items) {
+              const mappedItems = response.data.items.map((backendItem) => {
+                const sizeId = backendItem.sizeId;
+                return {
+                  id: `${backendItem.productId}-${sizeId || "no-size"}`,
+                  cartId: backendItem.id,
+                  productId: backendItem.productId,
+                  sizeId: sizeId,
+                  size: backendItem.sizeName,
+                  name: backendItem.name,
+                  price: backendItem.price,
+                  qty: backendItem.quantity,
+                  images: backendItem.url ? [{ url: backendItem.url }] : [],
+                  category: backendItem.category,
+                  cuisine: backendItem.cuisine,
+                  kitchen: backendItem.kitchen,
+                };
+              });
+              set({ items: mappedItems });
+            } else {
+              const updatedItems = get().items.map((item) =>
+                item.id === id ? { ...item, qty } : item,
+              );
+              set({ items: updatedItems });
+            }
           }
-          const updatedItems = get().items.map((item) =>
-            item.id === id ? { ...item, qty } : item,
-          );
-          set({ items: updatedItems });
         } catch (err) {
           toast.error("Failed to update quantity");
         }

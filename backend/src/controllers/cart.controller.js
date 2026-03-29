@@ -57,19 +57,27 @@ const addToCart = async (req, res, next) => {
       }
     }
 
-    // Add or update cart item
-    const result = await query(
-      `INSERT INTO "Cart" ("userId", "productId", "sizeId", quantity)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT ("userId", "productId", "sizeId")
-       DO UPDATE SET quantity = "Cart".quantity + $4, "updatedAt" = NOW()
-       RETURNING *`,
-      [userId, productId, sizeId || null, quantity],
+    // Check if item already exists (handles NULL sizeId correctly using IS NOT DISTINCT FROM)
+    const existingResult = await query(
+      `SELECT id FROM "Cart" WHERE "userId" = $1 AND "productId" = $2 AND "sizeId" IS NOT DISTINCT FROM $3`,
+      [userId, productId, sizeId || null],
     );
 
-    const cartItem = result.rows[0];
+    if (existingResult.rows.length > 0) {
+      // Item exists - increment quantity
+      await query(
+        `UPDATE "Cart" SET quantity = quantity + $1, "updatedAt" = NOW() WHERE id = $2`,
+        [quantity, existingResult.rows[0].id],
+      );
+    } else {
+      // New item - insert it
+      await query(
+        `INSERT INTO "Cart" ("userId", "productId", "sizeId", quantity) VALUES ($1, $2, $3, $4)`,
+        [userId, productId, sizeId || null, quantity],
+      );
+    }
 
-    // Fetch full details with product info
+    // Fetch and return full cart with all items
     const detailResult = await query(
       `SELECT DISTINCT ON (c.id)
               c.id, c."productId", c."sizeId", c.quantity, p.name, p.price, i.url, 
@@ -81,12 +89,12 @@ const addToCart = async (req, res, next) => {
        LEFT JOIN "Category" cat ON p."categoryId" = cat.id
        LEFT JOIN "Cuisine" cu ON p."cuisineId" = cu.id
        LEFT JOIN "Kitchen" k ON p."kitchenId" = k.id
-       WHERE c.id = $1
+       WHERE c."userId" = $1
        ORDER BY c.id, i.id`,
-      [cartItem.id],
+      [userId],
     );
 
-    res.status(201).json({ item: detailResult.rows[0] || cartItem });
+    res.status(201).json({ items: detailResult.rows || [] });
   } catch (err) {
     next(err);
   }
@@ -112,7 +120,24 @@ const updateCartItem = async (req, res, next) => {
       return res.status(404).json({ message: "Cart item not found" });
     }
 
-    res.json({ item: result.rows[0] });
+    // Fetch and return full cart with all items
+    const detailResult = await query(
+      `SELECT DISTINCT ON (c.id)
+              c.id, c."productId", c."sizeId", c.quantity, p.name, p.price, i.url, 
+              s.name as "sizeName", cat.name as category, cu.name as cuisine, k.name as kitchen
+       FROM "Cart" c
+       JOIN "Product" p ON c."productId" = p.id
+       LEFT JOIN "Image" i ON p.id = i."productId"
+       LEFT JOIN "Size" s ON c."sizeId" = s.id
+       LEFT JOIN "Category" cat ON p."categoryId" = cat.id
+       LEFT JOIN "Cuisine" cu ON p."cuisineId" = cu.id
+       LEFT JOIN "Kitchen" k ON p."kitchenId" = k.id
+       WHERE c."userId" = $1
+       ORDER BY c.id, i.id`,
+      [userId],
+    );
+
+    res.json({ items: detailResult.rows || [] });
   } catch (err) {
     next(err);
   }
@@ -133,7 +158,24 @@ const removeFromCart = async (req, res, next) => {
       return res.status(404).json({ message: "Cart item not found" });
     }
 
-    res.json({ message: "Item removed from cart" });
+    // Fetch and return full cart with all items
+    const detailResult = await query(
+      `SELECT DISTINCT ON (c.id)
+              c.id, c."productId", c."sizeId", c.quantity, p.name, p.price, i.url, 
+              s.name as "sizeName", cat.name as category, cu.name as cuisine, k.name as kitchen
+       FROM "Cart" c
+       JOIN "Product" p ON c."productId" = p.id
+       LEFT JOIN "Image" i ON p.id = i."productId"
+       LEFT JOIN "Size" s ON c."sizeId" = s.id
+       LEFT JOIN "Category" cat ON p."categoryId" = cat.id
+       LEFT JOIN "Cuisine" cu ON p."cuisineId" = cu.id
+       LEFT JOIN "Kitchen" k ON p."kitchenId" = k.id
+       WHERE c."userId" = $1
+       ORDER BY c.id, i.id`,
+      [userId],
+    );
+
+    res.json({ items: detailResult.rows || [] });
   } catch (err) {
     next(err);
   }
