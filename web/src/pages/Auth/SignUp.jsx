@@ -160,7 +160,7 @@ const SignUpPage = () => {
 
         <div className="relative w-full max-w-md">
           {/* Logo */}
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-4 sm:hidden">
             <img src={logo} alt="logo" className="w-28" />
           </div>
 
@@ -191,7 +191,7 @@ const SignUpPage = () => {
               >
                 {loading ? (
                   <>
-                    <LoadingSpinner size="xs" className="!flex" />
+                    <LoadingSpinner size="sm" className="!flex" />
                     Verifying…
                   </>
                 ) : (

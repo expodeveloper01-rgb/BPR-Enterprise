@@ -35,11 +35,13 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const isUncleBrew = pathname.startsWith("/uncle-brew");
   const isDiomedes = pathname.startsWith("/diomedes");
+  const isBeLaPaRi = !isUncleBrew && !isDiomedes;
   const store = isUncleBrew
     ? "uncle-brew"
     : isDiomedes
       ? "diomedes"
-      : "uncle-brew";
+      : "belapari";
+  const ordersPath = isBeLaPaRi ? "/orders" : `/${store}/orders`;
   const [method, setMethod] = useState("cod"); // "cod" | "bank_transfer"
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -138,12 +140,12 @@ export default function CheckoutPage() {
               </p>
             )}
             <div className="flex gap-3 justify-center pt-2">
-              <Link to={`/${store}/orders`}>
+              <Link to={ordersPath}>
                 <Button className="rounded-full bg-black text-white hover:bg-black/80 px-6">
                   View Orders
                 </Button>
               </Link>
-              <Link to={`/${store}/menu`}>
+              <Link to={isBeLaPaRi ? "/menu" : `/${store}/menu`}>
                 <Button variant="outline" className="rounded-full px-6">
                   Continue Shopping
                 </Button>

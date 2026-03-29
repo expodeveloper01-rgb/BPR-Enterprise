@@ -83,25 +83,35 @@ const getOrders = async (req, res, next) => {
       }
     }
 
-    const formatted = Array.from(ordersMap.values()).map((o) => ({
-      id: o.id,
-      isPaid: o.isPaid,
-      phone: o.phone,
-      address: o.address,
-      order_status: o.order_status,
-      statusMessage: o.statusMessage,
-      statusHistory: Array.isArray(o.statusHistory)
-        ? o.statusHistory
-        : typeof o.statusHistory === "string"
-          ? JSON.parse(o.statusHistory)
-          : [],
-      delivery_status: o.delivery_status,
-      createdAt: o.createdAt,
-      updatedAt: o.updatedAt,
-      userId: o.userId,
-      rider: o.rider,
-      orderItems: Array.from(o.itemsMap.values()),
-    }));
+    const formatted = Array.from(ordersMap.values()).map((o) => {
+      // Convert timestamps to ISO format with explicit UTC 'Z' marker
+      const createdAt = o.createdAt
+        ? new Date(o.createdAt).toISOString()
+        : null;
+      const updatedAt = o.updatedAt
+        ? new Date(o.updatedAt).toISOString()
+        : null;
+
+      return {
+        id: o.id,
+        isPaid: o.isPaid,
+        phone: o.phone,
+        address: o.address,
+        order_status: o.order_status,
+        statusMessage: o.statusMessage,
+        statusHistory: Array.isArray(o.statusHistory)
+          ? o.statusHistory
+          : typeof o.statusHistory === "string"
+            ? JSON.parse(o.statusHistory)
+            : [],
+        delivery_status: o.delivery_status,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        userId: o.userId,
+        rider: o.rider,
+        orderItems: Array.from(o.itemsMap.values()),
+      };
+    });
 
     res.json(formatted);
   } catch (err) {

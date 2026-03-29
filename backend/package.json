@@ -11,6 +11,7 @@
     "check:data": "node check-data.js",
     "fix:kitchen": "node fix-products-kitchen.js",
     "fix:timestamps": "node fix-timestamps.js",
+    "fix:order-times": "node fix-order-times-direct.js",
     "fix:rider-stats": "node fix-rider-stats.js",
     "debug:rider": "node debug-rider-stats.js"
   },
@@ -28,6 +29,7 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
     "pg": "^8.11.3",
+    "resend": "^6.9.4",
     "stripe": "^16.2.0"
   },
   "devDependencies": {

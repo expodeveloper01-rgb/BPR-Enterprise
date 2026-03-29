@@ -4,10 +4,9 @@
  */
 export const LoadingSpinner = ({ size = "md", className = "" }) => {
   const sizeClasses = {
-    xs: "w-5 h-5 border-2",
-    sm: "w-8 h-8 border-2",
-    md: "w-12 h-12 border-3",
-    lg: "w-16 h-16 border-4",
+    sm: "w-4 h-4 border-2",
+    md: "w-6 h-6 border-2",
+    lg: "w-8 h-8 border-2",
   };
 
   return (

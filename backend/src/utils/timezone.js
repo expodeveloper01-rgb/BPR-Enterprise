@@ -2,38 +2,14 @@
 // Stores current Manila time as ISO string for database consistency
 
 /**
- * Get current time in Manila timezone as ISO string
- * Converts the local time to Manila time and returns as ISO string
- * @returns {string} ISO string of current Manila time
+ * Get current UTC time as ISO string
+ * Simply returns the current UTC time (no conversion needed)
+ * The client will convert to Manila time for display using timeZone option
+ * @returns {string} ISO string of current UTC time
  */
 const getManilaTimeISO = () => {
-  const now = new Date();
-
-  // Manila is UTC+8
-  // Get the time in Manila by formatting to parts and reconstructing
-  const manilaFormatter = new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Manila",
-  });
-
-  const parts = manilaFormatter.formatToParts(now);
-  const partsObj = {};
-  parts.forEach(({ type, value }) => {
-    partsObj[type] = value;
-  });
-
-  // Reconstruct as ISO string
-  const manilaTime = new Date(
-    `${partsObj.year}-${partsObj.month}-${partsObj.day}T${partsObj.hour}:${partsObj.minute}:${partsObj.second}Z`,
-  );
-
-  return manilaTime.toISOString();
+  // Store actual UTC time, not Manila time disguised as UTC
+  return new Date().toISOString();
 };
 
 /**

@@ -80,13 +80,11 @@ const handleWebhook = async (req, res, next) => {
 
       // Create one order per kitchen
       for (const [kitchenId, kitchenProductIds] of itemsByKitchen.entries()) {
-        const manilaTime = getManilaTimeISO();
-
         const orderResult = await query(
           `INSERT INTO "Order" (id, "userId", "isPaid", "order_status", "delivery_status", "statusHistory", "createdAt", "updatedAt")
-           VALUES (gen_random_uuid(), $1, true, 'pending_confirmation', 'pending', $2, $3, $3)
+           VALUES (gen_random_uuid(), $1, true, 'pending_confirmation', 'pending', $2, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC'))
            RETURNING id`,
-          [userId, JSON.stringify([]), manilaTime],
+          [userId, JSON.stringify([])],
         );
 
         const orderId = orderResult.rows[0].id;
@@ -95,8 +93,8 @@ const handleWebhook = async (req, res, next) => {
         for (const productId of kitchenProductIds) {
           await query(
             `INSERT INTO "OrderItem" (id, "orderId", "productId", "createdAt", "updatedAt")
-             VALUES (gen_random_uuid(), $1, $2, $3, $3)`,
-            [orderId, productId, manilaTime],
+             VALUES (gen_random_uuid(), $1, $2, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC'))`,
+            [orderId, productId],
           );
         }
       }

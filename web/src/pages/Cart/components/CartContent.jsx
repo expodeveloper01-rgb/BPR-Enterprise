@@ -77,7 +77,7 @@ const CartContent = ({ store = "uncle-brew" }) => {
         <p className="text-muted-foreground text-sm">
           Browse our menu and add items to get started.
         </p>
-        <Link to={`/${store}/menu`}>
+        <Link to={`/stores`}>
           <Button className="rounded-full px-6 bg-black text-white hover:bg-black/80">
             Browse Menu
           </Button>

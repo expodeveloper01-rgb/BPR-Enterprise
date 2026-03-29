@@ -1,73 +1,30 @@
 const nodemailer = require("nodemailer");
 
-// SendGrid transporter (primary)
-const sendgridTransporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "apikey",
-    pass: process.env.SENDGRID_API_KEY,
-  },
-});
-
-// Gmail SMTP transporter (fallback)
-const gmailTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true",
+// Gmail SMTP configuration
+const transporter = nodemailer.createTransport({
+  service: "gmail",
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
-// Send email with timeout protection and smart fallback
+// Send email using Gmail SMTP
 async function sendEmailWithFallback(mailOptions) {
-  const TIMEOUT_MS = 8000; // 8 second timeout per provider
-
-  // Helper function to send with timeout
-  const sendWithTimeout = (transporter, provider) => {
-    return Promise.race([
-      transporter.sendMail(mailOptions),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`${provider} timeout after ${TIMEOUT_MS}ms`)),
-          TIMEOUT_MS,
-        ),
-      ),
-    ]);
-  };
-
   try {
-    // Try Gmail SMTP first (more reliable on Render)
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      try {
-        await sendWithTimeout(gmailTransporter, "Gmail");
-        console.log(`✅ Email sent via Gmail SMTP to ${mailOptions.to}`);
-        return;
-      } catch (err) {
-        console.warn("⚠️ Gmail SMTP failed, trying SendGrid:", err.message);
-      }
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      throw new Error("SMTP_USER or SMTP_PASS is not configured");
     }
 
-    // Fallback to SendGrid
-    if (process.env.SENDGRID_API_KEY) {
-      try {
-        await sendWithTimeout(sendgridTransporter, "SendGrid");
-        console.log(`✅ Email sent via SendGrid to ${mailOptions.to}`);
-        return;
-      } catch (err) {
-        console.error("❌ SendGrid also failed:", err.message);
-        throw new Error(
-          "Failed to send email via both Gmail SMTP and SendGrid",
-        );
-      }
-    }
+    const result = await transporter.sendMail({
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      html: mailOptions.html,
+    });
 
-    throw new Error(
-      "No email service configured (missing SMTP and SENDGRID credentials)",
-    );
+    console.log(`✅ Email sent via Gmail to ${mailOptions.to}`);
+    return result;
   } catch (err) {
     console.error("❌ Email service error:", err.message);
     throw err;
@@ -76,7 +33,7 @@ async function sendEmailWithFallback(mailOptions) {
 
 async function sendVerificationEmail(to, name, code) {
   const mailOptions = {
-    from: `"Uncle Brew Cebu" <${process.env.SMTP_FROM || "noreply@unclebrew.com"}>`,
+    from: `"Uncle Brew Cebu" <${process.env.SMTP_USER}>`,
     to,
     subject: "Your Uncle Brew verification code",
     html: `
@@ -94,7 +51,7 @@ async function sendVerificationEmail(to, name, code) {
 
 async function sendRiderVerificationEmail(to, name, code) {
   const mailOptions = {
-    from: `"Uncle Brew Cebu" <${process.env.SMTP_FROM || "noreply@unclebrew.com"}>`,
+    from: `"Uncle Brew Cebu" <${process.env.SMTP_USER}>`,
     to,
     subject: "Your Uncle Brew Rider verification code",
     html: `
@@ -112,7 +69,7 @@ async function sendRiderVerificationEmail(to, name, code) {
 
 async function sendPasswordResetEmail(to, name, resetLink) {
   const mailOptions = {
-    from: `"Uncle Brew Cebu" <${process.env.SMTP_FROM || "noreply@unclebrew.com"}>`,
+    from: `"Uncle Brew Cebu" <${process.env.SMTP_USER}>`,
     to,
     subject: "Reset your Uncle Brew password",
     html: `
