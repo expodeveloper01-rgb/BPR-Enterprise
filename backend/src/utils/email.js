@@ -1,29 +1,22 @@
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 
-// Gmail SMTP configuration
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Send email using Gmail SMTP
+// Send email using SendGrid
 async function sendEmailWithFallback(mailOptions) {
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error("SMTP_USER or SMTP_PASS is not configured");
+    if (!process.env.SENDGRID_API_KEY) {
+      throw new Error("SENDGRID_API_KEY is not configured");
     }
 
-    const result = await transporter.sendMail({
+    const result = await sgMail.send({
       from: mailOptions.from,
       to: mailOptions.to,
       subject: mailOptions.subject,
       html: mailOptions.html,
     });
 
-    console.log(`✅ Email sent via Gmail to ${mailOptions.to}`);
+    console.log(`✅ Email sent via SendGrid to ${mailOptions.to}`);
     return result;
   } catch (err) {
     console.error("❌ Email service error:", err.message);
@@ -33,12 +26,12 @@ async function sendEmailWithFallback(mailOptions) {
 
 async function sendVerificationEmail(to, name, code) {
   const mailOptions = {
-    from: `"Uncle Brew Cebu" <${process.env.SMTP_USER}>`,
+    from: `"Belapari Ventures" <${process.env.SMTP_USER}>`,
     to,
-    subject: "Your Uncle Brew verification code",
+    subject: "Your Belapari Ventures verification code",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
-        <img src="${process.env.FRONTEND_URL}/assets/img/uncle-brew.png" alt="Uncle Brew" style="width:80px;margin-bottom:24px" />
+        <img src="${process.env.FRONTEND_URL}/public/assets/img/belapari-icon.png" alt="Belapari Ventures" style="width:80px;margin-bottom:24px" />
         <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px">Verify your email</h2>
         <p style="color:#6b7280;font-size:15px;margin:0 0 24px">Hi ${name}, enter this code to complete your registration:</p>
         <div style="letter-spacing:12px;font-size:36px;font-weight:800;color:#111827;background:#f3f4f6;border-radius:8px;padding:16px 24px;display:inline-block;margin-bottom:24px">${code}</div>
