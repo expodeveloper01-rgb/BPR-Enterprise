@@ -20,32 +20,45 @@ const registerRider = async (req, res, next) => {
 
     // Check if rider already exists
     const existingRider = await query(
-      'SELECT id FROM "Rider" WHERE email = $1',
+      'SELECT * FROM "Rider" WHERE email = $1',
       [email],
     );
 
-    if (existingRider.rows.length > 0) {
+    const rider = existingRider.rows[0];
+
+    if (rider && rider.verified) {
       return res
         .status(400)
         .json({ message: "Rider with this email already exists" });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     // Generate verification code
     const verifyCode = generateVerificationCode();
     const verifyCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Create rider
-    const result = await query(
-      `INSERT INTO "Rider" (id, name, email, password, phone, "verifyCode", "verifyCodeExpires", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW())
-       RETURNING id, name, email, phone, verified, status`,
-      [name, email, hashedPassword, phone, verifyCode, verifyCodeExpires],
-    );
+    let result;
 
-    const rider = result.rows[0];
+    if (rider && !rider.verified) {
+      // Update existing unverified rider account with new credentials
+      const hashedPassword = await bcrypt.hash(password, 10);
+      result = await query(
+        `UPDATE "Rider" SET name = $1, password = $2, phone = $3, "verifyCode" = $4, "verifyCodeExpires" = $5, "updatedAt" = NOW()
+         WHERE email = $6
+         RETURNING id, name, email, phone, verified, status`,
+        [name, hashedPassword, phone, verifyCode, verifyCodeExpires, email],
+      );
+    } else {
+      // Create new rider
+      const hashedPassword = await bcrypt.hash(password, 10);
+      result = await query(
+        `INSERT INTO "Rider" (id, name, email, password, phone, "verifyCode", "verifyCodeExpires", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW())
+         RETURNING id, name, email, phone, verified, status`,
+        [name, email, hashedPassword, phone, verifyCode, verifyCodeExpires],
+      );
+    }
+
+    const newRider = result.rows[0];
 
     // Send verification email (non-blocking)
     sendRiderVerificationEmail(email, name, verifyCode).catch((err) =>
@@ -59,10 +72,10 @@ const registerRider = async (req, res, next) => {
       message:
         "Rider account created. Please verify your email to complete registration.",
       rider: {
-        id: rider.id,
-        name: rider.name,
-        email: rider.email,
-        verified: rider.verified,
+        id: newRider.id,
+        name: newRider.name,
+        email: newRider.email,
+        verified: newRider.verified,
       },
     });
   } catch (err) {
