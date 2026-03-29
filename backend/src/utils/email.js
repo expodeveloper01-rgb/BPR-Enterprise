@@ -44,12 +44,12 @@ async function sendVerificationEmail(to, name, code) {
 
 async function sendRiderVerificationEmail(to, name, code) {
   const mailOptions = {
-    from: `"Uncle Brew Cebu" <${process.env.SMTP_USER}>`,
+    from: `Belapari Ventures" <${process.env.SMTP_USER}>`,
     to,
-    subject: "Your Uncle Brew Rider verification code",
+    subject: "Your Belapari Ventures Rider verification code",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
-        <img src="${process.env.FRONTEND_URL}/assets/img/uncle-brew.png" alt="Uncle Brew" style="width:80px;margin-bottom:24px" />
+        <img src="${process.env.FRONTEND_URL}/assets/img/belapari-icon.png" alt="Belapari Ventures" style="width:80px;margin-bottom:24px" />
         <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px">Verify your email</h2>
         <p style="color:#6b7280;font-size:15px;margin:0 0 24px">Hi ${name}, enter this code to complete your rider account registration:</p>
         <div style="letter-spacing:12px;font-size:36px;font-weight:800;color:#111827;background:#f3f4f6;border-radius:8px;padding:16px 24px;display:inline-block;margin-bottom:24px">${code}</div>
@@ -62,12 +62,12 @@ async function sendRiderVerificationEmail(to, name, code) {
 
 async function sendPasswordResetEmail(to, name, resetLink) {
   const mailOptions = {
-    from: `"Uncle Brew Cebu" <${process.env.SMTP_USER}>`,
+    from: `"Belapari Ventures" <${process.env.SMTP_USER}>`,
     to,
-    subject: "Reset your Uncle Brew password",
+    subject: "Reset your Belapari Ventures password",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
-        <img src="${process.env.FRONTEND_URL}/assets/img/uncle-brew.png" alt="Uncle Brew" style="width:80px;margin-bottom:24px" />
+        <img src="${process.env.FRONTEND_URL}/assets/img/belapari-icon.png" alt="Belapari Ventures" style="width:80px;margin-bottom:24px" />
         <h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px">Reset your password</h2>
         <p style="color:#6b7280;font-size:15px;margin:0 0 24px">Hi ${name}, click the link below to reset your password:</p>
         <a href="${resetLink}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600;margin-bottom:24px">Reset Password</a>

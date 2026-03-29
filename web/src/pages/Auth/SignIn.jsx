@@ -151,7 +151,6 @@ const SignInPage = () => {
             <GoogleLogin
               onSuccess={handleGoogle}
               onError={() => toast.error("Google sign-in failed")}
-              width="100%"
             />
           </div>
         </div>

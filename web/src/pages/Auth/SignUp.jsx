@@ -335,7 +335,6 @@ const SignUpPage = () => {
             <GoogleLogin
               onSuccess={handleGoogle}
               onError={() => toast.error("Google sign-up failed")}
-              width="100%"
             />
           </div>
         </div>
